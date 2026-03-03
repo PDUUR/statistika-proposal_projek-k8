@@ -14,23 +14,18 @@
   --brand-orange: #F97316;
   --brand-orange-d: #EA6B0A;
   --brand-amber: #FBBF24;
-  --bg-base: #0B1121;
-  /* Background utama sangat gelap, bernuansa biru elegan */
-  --bg-card: #141E33;
-  /* Warna kartu sedikit lebih terang dari background */
+  --bg-base: #F8FAFC;
+  --bg-card: #FFFFFF;
   --bg-dark: #0F172A;
   --bg-dark-card: #1E293B;
-  --text-main: #F8FAFC;
-  /* Putih off-white agar tidak menyilaukan mata */
-  --text-muted: #94A3B8;
-  /* Abu-abu terang untuk teks paragraf/deskripsi */
-  --text-faint: #64748B;
-  --border-light: #2A3855;
-  /* Garis pembatas (border) yang gelap dan halus */
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --text-faint: #94A3B8;
+  --border-light: #E2E8F0;
   --radius-card: 20px;
   --radius-chip: 999px;
-  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-  --shadow-hover: 0 12px 40px -10px rgba(249, 115, 22, 0.25);
+  --shadow-card: 0 4px 20px rgba(15, 23, 42, 0.06);
+  --shadow-hover: 0 10px 30px rgba(15, 23, 42, 0.12);
   --transition: .25s cubic-bezier(.4, 0, .2, 1);
 }
 
