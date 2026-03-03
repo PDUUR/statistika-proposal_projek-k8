@@ -2,18 +2,19 @@
  * GestureScroll.jsx
  * -----------------------------------------------------------
  * Fitur Gesture Remote Scroll dengan kemampuan:
- * 1. Vertical Page Scroll (Up/Down)
- * 2. Horizontal Chart Scroll (Geser grafik)
+ * 1. Vertical Page Scroll (Up/Down) via Lerp
+ * 2. Horizontal Chart Scroll (Geser grafik) via Lerp
  * -----------------------------------------------------------
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 /* ── Konstanta ──────────────────────────────────────────── */
-const SCROLL_ZONE_PCT_V = 0.35; // Toleransi lebih besar: 35% atas/bawah
-const SCROLL_STEP_V = 25;   // Lebih cepat (25px)
-// Kurangi FPS untuk melancarkan performa browser
-const FPS_LIMIT = 24;
+const SCROLL_ZONE_PCT = 0.30;   // 30% batas luar zona (atas/bawah/kiri/kanan)
+const LERP_FACTOR = 0.08;   // Semakin kecil = makin licin/smooth decelerasi
+const MAX_VELOCITY_V = 25;     // Speed max scroll vertikal
+const MAX_VELOCITY_H = 25;     // Speed max scroll horizontal
+const FPS_LIMIT = 30;     // Batas frame proses MediaPipe
 
 /* ── Helpers ─────────────────────────────────────────────── */
 const waitForGlobal = (name, timeout = 8000) =>
@@ -28,10 +29,10 @@ const waitForGlobal = (name, timeout = 8000) =>
     });
 
 /* ── Komponen ─────────────────────────────────────────────── */
-const GestureScroll = () => {
+const GestureScroll = ({ chartScrollRef }) => {
     const [enabled, setEnabled] = useState(false);
     const [status, setStatus] = useState('idle');
-    const [gesture, setGesture] = useState(null);
+    const [direction, setDirection] = useState({ v: null, h: null }); // untuk indikator UI UI
 
     // Posisi kursor/tangan untuk UI feedback
     const [cursor, setCursor] = useState({ x: 0, y: 0, active: false });
@@ -41,29 +42,35 @@ const GestureScroll = () => {
     const cameraRef = useRef(null);
     const lastFrameTs = useRef(0);
 
-    // State scroll
+    // State Smoothing (Smooth Lerp Loop)
     const scrollAnimRef = useRef(null);
-    const currentGesture = useRef(null);
 
-    // Menyimpan posisi X sebelumnya untuk mendeteksi pergeseran kiri/kanan
-    const prevHandX = useRef(null);
+    // Target yang diminta oleh tangan
+    const targetVelocityY = useRef(0);
+    const targetVelocityX = useRef(0);
 
-    /* ── Vertical Scroll loop (requestAnimationFrame) ─── */
-    const runScrollLoop = useCallback(() => {
-        if (currentGesture.current === 'up') {
-            window.scrollBy({ top: -SCROLL_STEP_V, behavior: 'auto' });
-        } else if (currentGesture.current === 'down') {
-            window.scrollBy({ top: SCROLL_STEP_V, behavior: 'auto' });
+    // Nilai kecepatan halus (yang perlahan mengejar target)
+    const currentVelocityY = useRef(0);
+    const currentVelocityX = useRef(0);
+
+    /* ── Smooth Active Loop (Lerp + requestAnimationFrame) ─── */
+    const runSmoothLoop = useCallback(() => {
+        // Lerp logic: current = current + (target - current) * factor
+        currentVelocityY.current += (targetVelocityY.current - currentVelocityY.current) * LERP_FACTOR;
+        currentVelocityX.current += (targetVelocityX.current - currentVelocityX.current) * LERP_FACTOR;
+
+        // Apply Vertical Scroll
+        if (Math.abs(currentVelocityY.current) > 0.5) {
+            window.scrollBy({ top: currentVelocityY.current, behavior: 'auto' });
         }
-        scrollAnimRef.current = requestAnimationFrame(runScrollLoop);
-    }, []);
 
-    const stopScrollLoop = useCallback(() => {
-        if (scrollAnimRef.current) {
-            cancelAnimationFrame(scrollAnimRef.current);
-            scrollAnimRef.current = null;
+        // Apply Horizontal Scroll (jika chartScrollRef tersedia)
+        if (Math.abs(currentVelocityX.current) > 0.5 && chartScrollRef?.current) {
+            chartScrollRef.current.scrollLeft += currentVelocityX.current;
         }
-    }, []);
+
+        scrollAnimRef.current = requestAnimationFrame(runSmoothLoop);
+    }, [chartScrollRef]);
 
     /* ── MediaPipe onResults callback ─── */
     const onResults = useCallback((results) => {
@@ -72,74 +79,75 @@ const GestureScroll = () => {
         lastFrameTs.current = now;
 
         if (!results.multiHandLandmarks?.length) {
-            currentGesture.current = null;
-            setGesture(null);
+            // Tangan di luar layar -> Perlambat ke 0 (Decelerasi sisa Lerp)
+            targetVelocityY.current = 0;
+            targetVelocityX.current = 0;
+            setDirection({ v: null, h: null });
             setCursor(prev => ({ ...prev, active: false }));
-            prevHandX.current = null;
             return;
         }
 
         const wrist = results.multiHandLandmarks[0][0]; // landmark pergelangan tangan
-        const xNorm = wrist.x; // 0 = kiri layar webcam, 1 = kanan layar webcam
+        const xNorm = wrist.x; // 0 = kiri, 1 = kanan (webcam raw)
         const yNorm = wrist.y; // 0 = atas, 1 = bawah
 
-        // Mapping ke ukuran window. 
-        // Webcam "mirrored" secara natural: gerak tangan Anda ke kanan -> xNorm makin kecil
+        // Virtual Red Dot (Mirror mapping)
         const screenX = (1 - xNorm) * window.innerWidth;
         const screenY = yNorm * window.innerHeight;
+        setCursor({ x: screenX, y: screenY, active: true, yNorm, xNorm });
 
-        setCursor({ x: screenX, y: screenY, active: true, yNorm });
+        /* ── ZONING LOGIC (30-40-30) ─── */
+        let tVy = 0;
+        let tVx = 0;
 
-        /* ── HORIZONTAL CHART SCROLL ─── */
-        const chartEl = document.getElementById('chart-scroll-container');
-        if (chartEl) {
-            const rect = chartEl.getBoundingClientRect();
-            // Tambah sedikit margin toleransi hitbox area grafik agar lebih asyik digeser
-            const isHoveringChart = (
-                screenX >= rect.left - 50 && screenX <= rect.right + 50 &&
-                screenY >= rect.top - 80 && screenY <= rect.bottom + 80
-            );
+        let dirV = null;
+        let dirH = null;
 
-            if (isHoveringChart && prevHandX.current !== null) {
-                // xNorm mengecil artinya tangan bergerak ke Kanan secara fisik
-                const deltaXNorm = xNorm - prevHandX.current;
-
-                // Membalik deltaXNorm lalu mengali dengan faktor windowWidth & sensitivitas (misal 1.8)
-                // Jika tangan Anda ditarik ke KIRI, grafik bergeser mengikuti (natural swipe)
-                const scrollDeltaPx = deltaXNorm * window.innerWidth * 1.8;
-
-                // Beri sedikit threshold agar tidak terlalu bergetar/jitter
-                if (Math.abs(scrollDeltaPx) > 1.5) {
-                    chartEl.scrollLeft += scrollDeltaPx;
-                }
-            }
+        // VERTIKAL
+        if (yNorm < SCROLL_ZONE_PCT) {
+            // Masuk area 30% atas -> Velocity Negatif (Naik)
+            // Hitung intensitas joystick (semakin ke atas, makin kencang)
+            const intensity = (SCROLL_ZONE_PCT - yNorm) / SCROLL_ZONE_PCT;
+            tVy = -MAX_VELOCITY_V * Math.max(0, intensity);
+            dirV = 'up';
+        } else if (yNorm > 1 - SCROLL_ZONE_PCT) {
+            // Masuk area 30% bawah -> Velocity Positif (Turun)
+            const intensity = (yNorm - (1 - SCROLL_ZONE_PCT)) / SCROLL_ZONE_PCT;
+            tVy = MAX_VELOCITY_V * Math.max(0, intensity);
+            dirV = 'down';
         }
-        prevHandX.current = xNorm;
 
-        /* ── VERTICAL PAGE SCROLL ─── */
-        let next = null;
-        if (yNorm < SCROLL_ZONE_PCT_V) next = 'up';
-        else if (yNorm > 1 - SCROLL_ZONE_PCT_V) next = 'down';
-
-        if (next !== currentGesture.current) {
-            currentGesture.current = next;
-            setGesture(next);
-            if (next && !scrollAnimRef.current) {
-                scrollAnimRef.current = requestAnimationFrame(runScrollLoop);
-            } else if (!next) {
-                stopScrollLoop();
-            }
+        // HORIZONTAL
+        if (xNorm < SCROLL_ZONE_PCT) {
+            // x < 0.3 di web cam berarti sisi KANAN layar user karena mirror
+            const intensity = (SCROLL_ZONE_PCT - xNorm) / SCROLL_ZONE_PCT;
+            tVx = MAX_VELOCITY_H * Math.max(0, intensity);
+            dirH = 'right';
+        } else if (xNorm > 1 - SCROLL_ZONE_PCT) {
+            // x > 0.7 berarti sisi KIRI layar user
+            const intensity = (xNorm - (1 - SCROLL_ZONE_PCT)) / SCROLL_ZONE_PCT;
+            tVx = -MAX_VELOCITY_H * Math.max(0, intensity);
+            dirH = 'left';
         }
-    }, [runScrollLoop, stopScrollLoop]);
+
+        // Update target velocity. Lerp loop akan mengejarnya perlahan
+        targetVelocityY.current = tVy;
+        targetVelocityX.current = tVx;
+        setDirection({ v: dirV, h: dirH });
+
+    }, []);
 
     /* ── Init / Destroy MediaPipe ─── */
     useEffect(() => {
         if (!enabled) {
-            stopScrollLoop();
-            currentGesture.current = null;
-            setGesture(null);
+            if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
+            targetVelocityY.current = 0;
+            targetVelocityX.current = 0;
+            currentVelocityY.current = 0;
+            currentVelocityX.current = 0;
+
+            setDirection({ v: null, h: null });
             setCursor({ x: 0, y: 0, active: false });
-            prevHandX.current = null;
 
             if (cameraRef.current) {
                 cameraRef.current.stop();
@@ -155,6 +163,9 @@ const GestureScroll = () => {
 
         let cancelled = false;
         setStatus('loading');
+
+        // Mulai animasi loop halus
+        scrollAnimRef.current = requestAnimationFrame(runSmoothLoop);
 
         (async () => {
             try {
@@ -198,29 +209,39 @@ const GestureScroll = () => {
         return () => {
             cancelled = true;
         };
-    }, [enabled, onResults]);
+    }, [enabled, onResults, runSmoothLoop]);
 
     /* ── Cleanup on unmount ─── */
     useEffect(() => {
         return () => {
-            stopScrollLoop();
+            if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
             cameraRef.current?.stop();
             handsRef.current?.close();
         };
-    }, [stopScrollLoop]);
+    }, []);
 
     /* ── Derived UI state ─── */
     const statusColor = {
         idle: '#64748B', loading: '#F59E0B', active: '#22C55E', error: '#EF4444',
     }[status];
 
+    let dirText = 'Mendeteksi...';
+    if (direction.v || direction.h) {
+        let t = [];
+        if (direction.v === 'up') t.push('↑ Naik');
+        if (direction.v === 'down') t.push('↓ Turun');
+        if (direction.h === 'left') t.push('← Kiri');
+        if (direction.h === 'right') t.push('→ Kanan');
+        dirText = t.join(' & ');
+    } else {
+        dirText = 'Zona Aman (Hold)';
+    }
+
     const statusLabel = {
         idle: 'Gesture Scroll: Off',
-        loading: 'Memulai kamera…',
-        active: gesture === 'up' ? '↑ Berjalan Naik'
-            : gesture === 'down' ? '↓ Berjalan Turun'
-                : 'Gesture Active (Tangan Siap)',
-        error: 'Kamera gagal dimuat',
+        loading: 'Memulai kamera...',
+        active: cursor.active ? dirText : 'Tangan Hilang',
+        error: 'Kamera Gagal Dimuat',
     }[status];
 
     return (
@@ -277,8 +298,9 @@ const GestureScroll = () => {
                     {statusLabel}
                 </span>
                 {status === 'active' && cursor.active && (
-                    <span style={{ fontSize: '.65rem', color: '#94A3B8', fontFamily: 'monospace' }}>
-                        Y:{(cursor.yNorm * 100).toFixed(0)}%
+                    <span style={{ fontSize: '.65rem', color: '#94A3B8', fontFamily: 'monospace', display: 'flex', gap: 4 }}>
+                        <span>Y:{(cursor.yNorm * 100).toFixed(0)}</span>
+                        <span>X:{(cursor.xNorm * 100).toFixed(0)}</span>
                     </span>
                 )}
             </div>
@@ -286,21 +308,37 @@ const GestureScroll = () => {
             {/* ── Zone indicator overlay ── */}
             {status === 'active' && (
                 <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9000 }}>
-                    {/* Top zone (terlihat samar terus, aktif jadi jelas) */}
+                    {/* Top zone */}
                     <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0,
-                        height: `${SCROLL_ZONE_PCT_V * 100}%`,
-                        background: gesture === 'up' ? 'linear-gradient(to bottom, rgba(34,197,94,0.15), transparent)' : 'linear-gradient(to bottom, rgba(255,255,255,0.02), transparent)',
-                        borderBottom: gesture === 'up' ? '2px dashed rgba(34,197,94,0.6)' : '1px dashed rgba(255,255,255,0.1)',
+                        height: `${SCROLL_ZONE_PCT * 100}%`,
+                        background: direction.v === 'up' ? 'linear-gradient(to bottom, rgba(34,197,94,0.15), transparent)' : 'linear-gradient(to bottom, rgba(255,255,255,0.02), transparent)',
+                        borderBottom: direction.v === 'up' ? '1px dashed rgba(34,197,94,0.6)' : '1px dashed rgba(255,255,255,0.05)',
                         transition: 'all .3s',
                     }} />
 
                     {/* Bottom zone */}
                     <div style={{
                         position: 'absolute', bottom: 0, left: 0, right: 0,
-                        height: `${SCROLL_ZONE_PCT_V * 100}%`,
-                        background: gesture === 'down' ? 'linear-gradient(to top, rgba(239,68,68,0.15), transparent)' : 'linear-gradient(to top, rgba(255,255,255,0.02), transparent)',
-                        borderTop: gesture === 'down' ? '2px dashed rgba(239,68,68,0.6)' : '1px dashed rgba(255,255,255,0.1)',
+                        height: `${SCROLL_ZONE_PCT * 100}%`,
+                        background: direction.v === 'down' ? 'linear-gradient(to top, rgba(239,68,68,0.15), transparent)' : 'linear-gradient(to top, rgba(255,255,255,0.02), transparent)',
+                        borderTop: direction.v === 'down' ? '1px dashed rgba(239,68,68,0.6)' : '1px dashed rgba(255,255,255,0.05)',
+                        transition: 'all .3s',
+                    }} />
+
+                    {/* Left zone */}
+                    <div style={{
+                        position: 'absolute', top: '30%', bottom: '30%', left: 0, width: `${SCROLL_ZONE_PCT * 100}%`,
+                        background: direction.h === 'left' ? 'linear-gradient(to right, rgba(249,115,22,0.15), transparent)' : 'linear-gradient(to right, rgba(255,255,255,0.02), transparent)',
+                        borderRight: direction.h === 'left' ? '1px dashed rgba(249,115,22,0.6)' : '1px dashed rgba(255,255,255,0.05)',
+                        transition: 'all .3s',
+                    }} />
+
+                    {/* Right zone */}
+                    <div style={{
+                        position: 'absolute', top: '30%', bottom: '30%', right: 0, width: `${SCROLL_ZONE_PCT * 100}%`,
+                        background: direction.h === 'right' ? 'linear-gradient(to left, rgba(249,115,22,0.15), transparent)' : 'linear-gradient(to left, rgba(255,255,255,0.02), transparent)',
+                        borderLeft: direction.h === 'right' ? '1px dashed rgba(249,115,22,0.6)' : '1px dashed rgba(255,255,255,0.05)',
                         transition: 'all .3s',
                     }} />
                 </div>
