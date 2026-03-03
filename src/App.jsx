@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import GestureScroll from './GestureScroll';
 import {
   ComposedChart,
   Bar,
@@ -585,6 +586,9 @@ const App = () => {
         </section>
 
       </main>
+
+      {/* ── GESTURE SCROLL ─── */}
+      <GestureScroll />
 
       {/* ── FOOTER ─── */}
       <footer style={{
