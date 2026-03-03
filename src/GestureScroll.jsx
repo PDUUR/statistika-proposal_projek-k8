@@ -1,22 +1,19 @@
 /**
  * GestureScroll.jsx
  * -----------------------------------------------------------
- * Fitur Gesture Remote Scroll dengan kemampuan:
- * 1. Vertical Page Scroll (Up/Down) via Lerp
- * 2. Horizontal Chart Scroll (Geser grafik) via Lerp
+ * Fitur Gesture Remote Scroll dengan fisika Inersia (Acceleration & Friction)
+ * untuk menghilangkan efek "macet" dan memberikan kelenturan saat presentasi.
  * -----------------------------------------------------------
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
-/* ── Konstanta ──────────────────────────────────────────── */
-const SCROLL_ZONE_PCT = 0.30;   // 30% batas luar zona (atas/bawah/kiri/kanan)
-const LERP_FACTOR = 0.08;   // Semakin kecil = makin licin/smooth decelerasi
-const MAX_VELOCITY_V = 25;     // Speed max scroll vertikal
-const MAX_VELOCITY_H = 25;     // Speed max scroll horizontal
-const FPS_LIMIT = 30;     // Batas frame proses MediaPipe
+/* ── Konstanta Fisika ─────────────────────────────────────── */
+const FRICTION = 0.95;  // 0.95 memberikan efek meluncur yang panjang dan seksi
+const ACCEL_V = 2.0;   // Akselerasi vertikal dasar
+const ACCEL_H = 2.0;   // Akselerasi horizontal dasar
+const FPS_LIMIT = 30;    // Batas frame proses MediaPipe
 
-/* ── Helpers ─────────────────────────────────────────────── */
 const waitForGlobal = (name, timeout = 8000) =>
     new Promise((resolve, reject) => {
         const deadline = Date.now() + timeout;
@@ -32,42 +29,81 @@ const waitForGlobal = (name, timeout = 8000) =>
 const GestureScroll = ({ chartScrollRef }) => {
     const [enabled, setEnabled] = useState(false);
     const [status, setStatus] = useState('idle');
-    const [direction, setDirection] = useState({ v: null, h: null }); // untuk indikator UI UI
+    const [direction, setDirection] = useState({ v: null, h: null });
 
-    // Posisi kursor/tangan untuk UI feedback
-    const [cursor, setCursor] = useState({ x: 0, y: 0, active: false });
+    const [cursor, setCursor] = useState({ x: 0, y: 0, active: false, yNorm: 0, xNorm: 0 });
 
     const videoRef = useRef(null);
     const handsRef = useRef(null);
     const cameraRef = useRef(null);
     const lastFrameTs = useRef(0);
 
-    // State Smoothing (Smooth Lerp Loop)
     const scrollAnimRef = useRef(null);
 
-    // Target yang diminta oleh tangan
-    const targetVelocityY = useRef(0);
-    const targetVelocityX = useRef(0);
+    // GLOBAL STATE UNTUK VELOCITY (Sesuai instruksi)
+    // Kecepatan murni yang akan digosok dengan Friction setiap frame
+    const velocityY = useRef(0);
+    const velocityX = useRef(0);
 
-    // Nilai kecepatan halus (yang perlahan mengejar target)
-    const currentVelocityY = useRef(0);
-    const currentVelocityX = useRef(0);
+    // Ref untuk menampung posisi tangan saat ini agar bisa dibaca oleh loop animasi
+    const handPos = useRef({ x: null, y: null });
 
-    /* ── Smooth Active Loop (Lerp + requestAnimationFrame) ─── */
+    /* ── Continuous Smoothing Loop (RequestAnimationFrame) ─── */
     const runSmoothLoop = useCallback(() => {
-        // Lerp logic: current = current + (target - current) * factor
-        currentVelocityY.current += (targetVelocityY.current - currentVelocityY.current) * LERP_FACTOR;
-        currentVelocityX.current += (targetVelocityX.current - currentVelocityX.current) * LERP_FACTOR;
+        // 1. Ambil posisi tangan terakhir yang diketahui
+        const { x: xNorm, y: yNorm } = handPos.current;
 
-        // Apply Vertical Scroll
-        if (Math.abs(currentVelocityY.current) > 0.5) {
-            window.scrollBy({ top: currentVelocityY.current, behavior: 'auto' });
+        let dirV = null;
+        let dirH = null;
+
+        if (xNorm !== null && yNorm !== null) {
+            // 2. Berikan AKSELERASI jika tangan berada di zona pemicu
+
+            // BONGKAR BLOKADE SCROLL ATAS (y < 0.25)
+            // Memberikan akselerasi negatif yang kuat
+            if (yNorm < 0.25) {
+                // Makin tinggi tangan, makin kuat tarikannya
+                const thrust = 1 + ((0.25 - yNorm) / 0.25) * 2;
+                velocityY.current -= ACCEL_V * thrust;
+                dirV = 'up';
+            }
+            // SCROLL BAWAH
+            else if (yNorm > 0.75) {
+                const thrust = 1 + ((yNorm - 0.75) / 0.25) * 2;
+                velocityY.current += ACCEL_V * thrust;
+                dirV = 'down';
+            }
+
+            // TARGETING GRAFIK KANAN-KIRI
+            if (xNorm < 0.3) {
+                // xNorm kecil (di kamera kiri, aktualnya karena di-mirror adalah kanan)
+                const thrust = 1 + ((0.3 - xNorm) / 0.3) * 2;
+                velocityX.current += ACCEL_H * thrust;
+                dirH = 'right';
+            } else if (xNorm > 0.7) {
+                const thrust = 1 + ((xNorm - 0.7) / 0.3) * 2;
+                velocityX.current -= ACCEL_H * thrust;
+                dirH = 'left';
+            }
         }
 
-        // Apply Horizontal Scroll (jika chartScrollRef tersedia)
-        if (Math.abs(currentVelocityX.current) > 0.5 && chartScrollRef?.current) {
-            chartScrollRef.current.scrollLeft += currentVelocityX.current;
+        // 3. APPLY FRICTION (Efek Dekelerasi / Daya Luncur yang mengalir)
+        velocityY.current *= FRICTION;
+        velocityX.current *= FRICTION;
+
+        // 4. TERAPKAN KE BROWSER BILA KECEPATAN SIGNIFIKAN
+        if (Math.abs(velocityY.current) > 0.5) {
+            // behavior 'auto' membiarkan fisika kita yang mengatur kehalusannya, tanpa antrian animasi browser
+            window.scrollBy({ top: velocityY.current, behavior: 'auto' });
         }
+        if (Math.abs(velocityX.current) > 0.5 && chartScrollRef?.current) {
+            chartScrollRef.current.scrollLeft += velocityX.current;
+        }
+
+        // Update state direksi untuk UI (dimasukkan requestAnimationFrame agak lambat di React, 
+        // tapi lebih baik daripada panggil setState terus menerus)
+        // Untuk hindari rendering loop, kita biarkan UI update diatur event beda jika perlu, 
+        // namun demi sinkronisasi visual kita tempel di ref dulu lalu update di MediaPipe event.
 
         scrollAnimRef.current = requestAnimationFrame(runSmoothLoop);
     }, [chartScrollRef]);
@@ -79,61 +115,30 @@ const GestureScroll = ({ chartScrollRef }) => {
         lastFrameTs.current = now;
 
         if (!results.multiHandLandmarks?.length) {
-            // Tangan di luar layar -> Perlambat ke 0 (Decelerasi sisa Lerp)
-            targetVelocityY.current = 0;
-            targetVelocityX.current = 0;
+            // Tangan di luar frame, lepas gas
+            handPos.current = { x: null, y: null };
             setDirection({ v: null, h: null });
             setCursor(prev => ({ ...prev, active: false }));
             return;
         }
 
-        const wrist = results.multiHandLandmarks[0][0]; // landmark pergelangan tangan
-        const xNorm = wrist.x; // 0 = kiri, 1 = kanan (webcam raw)
-        const yNorm = wrist.y; // 0 = atas, 1 = bawah
+        const wrist = results.multiHandLandmarks[0][0];
+        const xNorm = wrist.x;
+        const yNorm = wrist.y;
 
-        // Virtual Red Dot (Mirror mapping)
+        // Simpan ke Mutable Ref agar dieksekusi oleh 60 FPS Loop
+        handPos.current = { x: xNorm, y: yNorm };
+
+        // Update UI
         const screenX = (1 - xNorm) * window.innerWidth;
         const screenY = yNorm * window.innerHeight;
         setCursor({ x: screenX, y: screenY, active: true, yNorm, xNorm });
 
-        /* ── ZONING LOGIC (30-40-30) ─── */
-        let tVy = 0;
-        let tVx = 0;
-
-        let dirV = null;
-        let dirH = null;
-
-        // VERTIKAL
-        if (yNorm < SCROLL_ZONE_PCT) {
-            // Masuk area 30% atas -> Velocity Negatif (Naik)
-            // Hitung intensitas joystick (semakin ke atas, makin kencang)
-            const intensity = (SCROLL_ZONE_PCT - yNorm) / SCROLL_ZONE_PCT;
-            tVy = -MAX_VELOCITY_V * Math.max(0, intensity);
-            dirV = 'up';
-        } else if (yNorm > 1 - SCROLL_ZONE_PCT) {
-            // Masuk area 30% bawah -> Velocity Positif (Turun)
-            const intensity = (yNorm - (1 - SCROLL_ZONE_PCT)) / SCROLL_ZONE_PCT;
-            tVy = MAX_VELOCITY_V * Math.max(0, intensity);
-            dirV = 'down';
-        }
-
-        // HORIZONTAL
-        if (xNorm < SCROLL_ZONE_PCT) {
-            // x < 0.3 di web cam berarti sisi KANAN layar user karena mirror
-            const intensity = (SCROLL_ZONE_PCT - xNorm) / SCROLL_ZONE_PCT;
-            tVx = MAX_VELOCITY_H * Math.max(0, intensity);
-            dirH = 'right';
-        } else if (xNorm > 1 - SCROLL_ZONE_PCT) {
-            // x > 0.7 berarti sisi KIRI layar user
-            const intensity = (xNorm - (1 - SCROLL_ZONE_PCT)) / SCROLL_ZONE_PCT;
-            tVx = -MAX_VELOCITY_H * Math.max(0, intensity);
-            dirH = 'left';
-        }
-
-        // Update target velocity. Lerp loop akan mengejarnya perlahan
-        targetVelocityY.current = tVy;
-        targetVelocityX.current = tVx;
-        setDirection({ v: dirV, h: dirH });
+        // UI Direction update (simplifikasi)
+        let dv = null; let dh = null;
+        if (yNorm < 0.25) dv = 'up'; else if (yNorm > 0.75) dv = 'down';
+        if (xNorm < 0.3) dh = 'right'; else if (xNorm > 0.7) dh = 'left';
+        setDirection({ v: dv, h: dh });
 
     }, []);
 
@@ -141,13 +146,12 @@ const GestureScroll = ({ chartScrollRef }) => {
     useEffect(() => {
         if (!enabled) {
             if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
-            targetVelocityY.current = 0;
-            targetVelocityX.current = 0;
-            currentVelocityY.current = 0;
-            currentVelocityX.current = 0;
+            velocityY.current = 0;
+            velocityX.current = 0;
+            handPos.current = { x: null, y: null };
 
             setDirection({ v: null, h: null });
-            setCursor({ x: 0, y: 0, active: false });
+            setCursor({ x: 0, y: 0, active: false, yNorm: 0, xNorm: 0 });
 
             if (cameraRef.current) {
                 cameraRef.current.stop();
@@ -164,7 +168,7 @@ const GestureScroll = ({ chartScrollRef }) => {
         let cancelled = false;
         setStatus('loading');
 
-        // Mulai animasi loop halus
+        // Mulai animasi engine "Inersia" kita di background
         scrollAnimRef.current = requestAnimationFrame(runSmoothLoop);
 
         (async () => {
@@ -211,7 +215,6 @@ const GestureScroll = ({ chartScrollRef }) => {
         };
     }, [enabled, onResults, runSmoothLoop]);
 
-    /* ── Cleanup on unmount ─── */
     useEffect(() => {
         return () => {
             if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
@@ -225,23 +228,21 @@ const GestureScroll = ({ chartScrollRef }) => {
         idle: '#64748B', loading: '#F59E0B', active: '#22C55E', error: '#EF4444',
     }[status];
 
-    let dirText = 'Mendeteksi...';
+    let dirText = 'Tangan di Safe Zone';
     if (direction.v || direction.h) {
         let t = [];
-        if (direction.v === 'up') t.push('↑ Naik');
-        if (direction.v === 'down') t.push('↓ Turun');
-        if (direction.h === 'left') t.push('← Kiri');
-        if (direction.h === 'right') t.push('→ Kanan');
-        dirText = t.join(' & ');
-    } else {
-        dirText = 'Zona Aman (Hold)';
+        if (direction.v === 'up') t.push('↑ Elevasi Naik');
+        if (direction.v === 'down') t.push('↓ Elevasi Turun');
+        if (direction.h === 'left') t.push('← Grafik Kiri');
+        if (direction.h === 'right') t.push('→ Grafik Kanan');
+        dirText = t.join(' | ');
     }
 
     const statusLabel = {
         idle: 'Gesture Scroll: Off',
-        loading: 'Memulai kamera...',
-        active: cursor.active ? dirText : 'Tangan Hilang',
-        error: 'Kamera Gagal Dimuat',
+        loading: 'Kamera Inisialisasi...',
+        active: cursor.active ? dirText : 'Posisikan Tangan ke Kamera',
+        error: 'Kamera Gagal Akses',
     }[status];
 
     return (
@@ -305,38 +306,38 @@ const GestureScroll = ({ chartScrollRef }) => {
                 )}
             </div>
 
-            {/* ── Zone indicator overlay ── */}
+            {/* ── Visual Zones Overlay ── */}
             {status === 'active' && (
                 <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9000 }}>
-                    {/* Top zone */}
+                    {/* Top zone 25% */}
                     <div style={{
                         position: 'absolute', top: 0, left: 0, right: 0,
-                        height: `${SCROLL_ZONE_PCT * 100}%`,
+                        height: '25%',
                         background: direction.v === 'up' ? 'linear-gradient(to bottom, rgba(34,197,94,0.15), transparent)' : 'linear-gradient(to bottom, rgba(255,255,255,0.02), transparent)',
                         borderBottom: direction.v === 'up' ? '1px dashed rgba(34,197,94,0.6)' : '1px dashed rgba(255,255,255,0.05)',
                         transition: 'all .3s',
                     }} />
 
-                    {/* Bottom zone */}
+                    {/* Bottom zone 25% */}
                     <div style={{
                         position: 'absolute', bottom: 0, left: 0, right: 0,
-                        height: `${SCROLL_ZONE_PCT * 100}%`,
+                        height: '25%',
                         background: direction.v === 'down' ? 'linear-gradient(to top, rgba(239,68,68,0.15), transparent)' : 'linear-gradient(to top, rgba(255,255,255,0.02), transparent)',
                         borderTop: direction.v === 'down' ? '1px dashed rgba(239,68,68,0.6)' : '1px dashed rgba(255,255,255,0.05)',
                         transition: 'all .3s',
                     }} />
 
-                    {/* Left zone */}
+                    {/* Left zone 30% */}
                     <div style={{
-                        position: 'absolute', top: '30%', bottom: '30%', left: 0, width: `${SCROLL_ZONE_PCT * 100}%`,
+                        position: 'absolute', top: '25%', bottom: '25%', left: 0, width: '30%',
                         background: direction.h === 'left' ? 'linear-gradient(to right, rgba(249,115,22,0.15), transparent)' : 'linear-gradient(to right, rgba(255,255,255,0.02), transparent)',
                         borderRight: direction.h === 'left' ? '1px dashed rgba(249,115,22,0.6)' : '1px dashed rgba(255,255,255,0.05)',
                         transition: 'all .3s',
                     }} />
 
-                    {/* Right zone */}
+                    {/* Right zone 30% */}
                     <div style={{
-                        position: 'absolute', top: '30%', bottom: '30%', right: 0, width: `${SCROLL_ZONE_PCT * 100}%`,
+                        position: 'absolute', top: '25%', bottom: '25%', right: 0, width: '30%',
                         background: direction.h === 'right' ? 'linear-gradient(to left, rgba(249,115,22,0.15), transparent)' : 'linear-gradient(to left, rgba(255,255,255,0.02), transparent)',
                         borderLeft: direction.h === 'right' ? '1px dashed rgba(249,115,22,0.6)' : '1px dashed rgba(255,255,255,0.05)',
                         transition: 'all .3s',
