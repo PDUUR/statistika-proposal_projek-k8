@@ -2,34 +2,34 @@
    DESIGN SYSTEM – TPT Proposal
    ───────────────────────────────────────────────────────────── */
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
 :root {
-  --brand-orange:   #F97316;
+  --brand-orange: #F97316;
   --brand-orange-d: #EA6B0A;
-  --brand-amber:    #FBBF24;
-  --bg-base:        #F8FAFC;
-  --bg-card:        #FFFFFF;
-  --bg-dark:        #0F172A;
-  --bg-dark-card:   #1E293B;
-  --text-main:      #0F172A;
-  --text-muted:     #64748B;
-  --text-faint:     #94A3B8;
-  --border-light:   #E2E8F0;
-  --radius-card:    20px;
-  --radius-chip:    999px;
-  --shadow-card:    0 4px 24px 0 rgba(15,23,42,0.08);
-  --shadow-hover:   0 12px 40px 0 rgba(249,115,22,0.18);
-  --transition:     .25s cubic-bezier(.4,0,.2,1);
+  --brand-amber: #FBBF24;
+  --bg-base: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-dark: #0F172A;
+  --bg-dark-card: #1E293B;
+  --text-main: #0F172A;
+  --text-muted: #64748B;
+  --text-faint: #94A3B8;
+  --border-light: #E2E8F0;
+  --radius-card: 20px;
+  --radius-chip: 999px;
+  --shadow-card: 0 4px 24px 0 rgba(15, 23, 42, 0.08);
+  --shadow-hover: 0 12px 40px 0 rgba(249, 115, 22, 0.18);
+  --transition: .25s cubic-bezier(.4, 0, .2, 1);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* scroll-behavior: smooth dihapus — konflik dengan Gesture RAF loop */
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
@@ -40,44 +40,115 @@ body {
 }
 
 /* ── Scrollbar ─── */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #F1F5F9; }
-::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: var(--brand-orange); }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-orange);
+}
 
 /* ── Selection ─── */
-::selection { background: #FED7AA; color: #7C2D12; }
+::selection {
+  background: #FED7AA;
+  color: #7C2D12;
+}
 
 /* ── Animations ─── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(249,115,22,0.3); }
-  50%       { box-shadow: 0 0 0 10px rgba(249,115,22,0); }
-}
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
-}
-@keyframes scrollBounce {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50%       { transform: translateX(-50%) translateY(6px); }
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.fade-up { animation: fadeUp .6s ease forwards; }
-.fade-up-d1 { animation-delay: .1s; }
-.fade-up-d2 { animation-delay: .2s; }
-.fade-up-d3 { animation-delay: .3s; }
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px rgba(249, 115, 22, 0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+
+  100% {
+    background-position: 200% center;
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes scrollBounce {
+
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(6px);
+  }
+}
+
+.fade-up {
+  animation: fadeUp .6s ease forwards;
+}
+
+.fade-up-d1 {
+  animation-delay: .1s;
+}
+
+.fade-up-d2 {
+  animation-delay: .2s;
+}
+
+.fade-up-d3 {
+  animation-delay: .3s;
+}
 
 /* ── Layout helpers ─── */
-.container { max-width: 1280px; margin: 0 auto; padding: 0 2rem; }
-.section-gap { margin-bottom: 5rem; }
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.section-gap {
+  margin-bottom: 5rem;
+}
 
 /* ── Section header ─── */
 .section-header {
@@ -88,8 +159,20 @@ body {
   padding-bottom: .75rem;
   border-bottom: 2px solid #FED7AA;
 }
-.section-header svg { color: var(--brand-orange); width: 2rem; height: 2rem; flex-shrink: 0; }
-.section-header h2 { font-family: 'Outfit', sans-serif; font-size: 1.6rem; font-weight: 800; color: var(--text-main); }
+
+.section-header svg {
+  color: var(--brand-orange);
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+}
+
+.section-header h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
 
 /* ── Card base ─── */
 .card {
@@ -99,6 +182,7 @@ body {
   border: 1px solid var(--border-light);
   transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
 }
+
 .card:hover {
   box-shadow: var(--shadow-hover);
   transform: translateY(-2px);

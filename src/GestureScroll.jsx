@@ -59,11 +59,11 @@ const GestureScroll = ({ chartScrollRef }) => {
     const tick = useCallback(() => {
         const { x: hx, y: hy } = hand.current;
 
-        // Hanya berikan dorongan jika tangan terdeteksi
+        // Berikan dorongan jika tangan terdeteksi di zona aktif
         if (hy !== null) {
             if (hy < ZONE_V_UP) {
-                const thrust = (ZONE_V_UP - hy) / ZONE_V_UP; // 0..1
-                velocity.current.y -= POWER_V * (1 + thrust * 2); // makin atas makin kencang
+                const thrust = (ZONE_V_UP - hy) / ZONE_V_UP;
+                velocity.current.y -= POWER_V * (1 + thrust * 2);
             } else if (hy > ZONE_V_DN) {
                 const thrust = (hy - ZONE_V_DN) / (1 - ZONE_V_DN);
                 velocity.current.y += POWER_V * (1 + thrust * 2);
@@ -72,23 +72,26 @@ const GestureScroll = ({ chartScrollRef }) => {
             if (hx !== null) {
                 if (hx < ZONE_H_R) {
                     const thrust = (ZONE_H_R - hx) / ZONE_H_R;
-                    velocity.current.x += POWER_H * (1 + thrust * 2); // geser chart kanan
+                    velocity.current.x += POWER_H * (1 + thrust * 2);
                 } else if (hx > ZONE_H_L) {
                     const thrust = (hx - ZONE_H_L) / (1 - ZONE_H_L);
-                    velocity.current.x -= POWER_H * (1 + thrust * 2); // geser chart kiri
+                    velocity.current.x -= POWER_H * (1 + thrust * 2);
                 }
             }
         }
 
-        // Terapkan ke browser
+        // ── KUNCI FIX: Mutasi scrollTop langsung, BUKAN window.scrollBy ──
+        // window.scrollBy masuk antrian smooth-scroll browser → macet.
+        // scrollTop langsung BYPASS semua antrian itu.
         if (Math.abs(velocity.current.y) > 0.3) {
-            window.scrollBy(0, velocity.current.y);
+            document.documentElement.scrollTop += velocity.current.y;
+            document.body.scrollTop += velocity.current.y; // fallback Safari
         }
         if (Math.abs(velocity.current.x) > 0.3 && chartScrollRef?.current) {
             chartScrollRef.current.scrollLeft += velocity.current.x;
         }
 
-        // Friction — hentikan pergerakan secara organik
+        // Friction — momentum melambat alami
         velocity.current.y *= FRICTION;
         velocity.current.x *= FRICTION;
 
@@ -134,6 +137,9 @@ const GestureScroll = ({ chartScrollRef }) => {
             if (rafId.current) cancelAnimationFrame(rafId.current);
             velocity.current = { x: 0, y: 0 };
             hand.current = { x: null, y: null };
+            // Kembalikan scroll behavior CSS ke normal
+            document.documentElement.style.scrollBehavior = '';
+            document.body.style.scrollBehavior = '';
             cameraRef.current?.stop(); cameraRef.current = null;
             handsRef.current?.close(); handsRef.current = null;
             setDot(null); setDir('');
@@ -142,6 +148,11 @@ const GestureScroll = ({ chartScrollRef }) => {
         }
 
         setStatus('loading');
+
+        // Paksa matikan smooth-scroll CSS saat gesture aktif
+        // agar scrollTop assignment tidak di-intercept oleh browser animation queue
+        document.documentElement.style.scrollBehavior = 'auto';
+        document.body.style.scrollBehavior = 'auto';
 
         // Mulai loop segera (tanpa tunggu kamera aktif)
         rafId.current = requestAnimationFrame(tick);
