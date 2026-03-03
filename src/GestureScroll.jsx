@@ -10,9 +10,10 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 /* ═══════════════════════════════════════════════
    KONSTANTA — sesuaikan di sini jika perlu
 ═══════════════════════════════════════════════ */
-const FRICTION = 0.85;  // Gesekan per frame. < 1 = melambat alami
-const POWER_V = 6;     // Dorongan vertikal per frame MediaPipe
-const POWER_H = 6;     // Dorongan horizontal per frame MediaPipe
+const FRICTION = 0.80;  // Diperkuat: berhenti lebih cepat (sebelumnya 0.85)
+const POWER_V = 4;     // Dikurangi: akselerasi lebih halus (sebelumnya 6)
+const POWER_H = 4;     // Dikurangi: geser grafik lebih lambat (sebelumnya 6)
+const MAX_VEL = 12;    // Batas Kecepatan: Tidak bisa lebih dari 12px/frame
 const ZONE_V_UP = 0.20;  // 20% atas layar  → scroll ke atas
 const ZONE_V_DN = 0.80;  // 80% bawah layar → scroll ke bawah
 const ZONE_H_L = 0.70;  // tangan di x>0.7 (kiri secara fisik, raw kamera belum mirror) → geser kiri
@@ -59,26 +60,30 @@ const GestureScroll = ({ chartScrollRef }) => {
     const tick = useCallback(() => {
         const { x: hx, y: hy } = hand.current;
 
-        // Berikan dorongan jika tangan terdeteksi di zona aktif
+        // Hanya berikan dorongan jika tangan terdeteksi
         if (hy !== null) {
             if (hy < ZONE_V_UP) {
                 const thrust = (ZONE_V_UP - hy) / ZONE_V_UP;
-                velocity.current.y -= POWER_V * (1 + thrust * 2);
+                velocity.current.y -= POWER_V * (1 + thrust);
             } else if (hy > ZONE_V_DN) {
                 const thrust = (hy - ZONE_V_DN) / (1 - ZONE_V_DN);
-                velocity.current.y += POWER_V * (1 + thrust * 2);
+                velocity.current.y += POWER_V * (1 + thrust);
             }
 
             if (hx !== null) {
                 if (hx < ZONE_H_R) {
                     const thrust = (ZONE_H_R - hx) / ZONE_H_R;
-                    velocity.current.x += POWER_H * (1 + thrust * 2);
+                    velocity.current.x += POWER_H * (1 + thrust);
                 } else if (hx > ZONE_H_L) {
                     const thrust = (hx - ZONE_H_L) / (1 - ZONE_H_L);
-                    velocity.current.x -= POWER_H * (1 + thrust * 2);
+                    velocity.current.x -= POWER_H * (1 + thrust);
                 }
             }
         }
+
+        // ── PASANG BATAS KECEPATAN (Max Velocity) ──────────
+        velocity.current.y = Math.max(-MAX_VEL, Math.min(MAX_VEL, velocity.current.y));
+        velocity.current.x = Math.max(-MAX_VEL, Math.min(MAX_VEL, velocity.current.x));
 
         // ── KUNCI FIX: Mutasi scrollTop langsung, BUKAN window.scrollBy ──
         // window.scrollBy masuk antrian smooth-scroll browser → macet.
@@ -91,7 +96,7 @@ const GestureScroll = ({ chartScrollRef }) => {
             chartScrollRef.current.scrollLeft += velocity.current.x;
         }
 
-        // Friction — momentum melambat alami
+        // Friction — hentikan pergerakan secara organik
         velocity.current.y *= FRICTION;
         velocity.current.x *= FRICTION;
 
