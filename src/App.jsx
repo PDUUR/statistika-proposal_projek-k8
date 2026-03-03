@@ -469,7 +469,7 @@ const App = () => {
             </div>
 
             {/* Scrollable chart container */}
-            <div style={{ overflowX: 'auto', paddingBottom: '1rem' }}>
+            <div id="chart-scroll-container" style={{ overflowX: 'auto', paddingBottom: '1rem', scrollBehavior: 'auto' }}>
               <div style={{ minWidth: 2200, height: 650, position: 'relative' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={data} margin={{ top: 50, right: 30, bottom: 80, left: 10 }} barCategoryGap="30%" barGap={2}>
