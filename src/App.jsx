@@ -318,16 +318,26 @@ const App = () => {
 
           <h1 style={{
             fontFamily: 'Outfit, sans-serif',
-            fontSize: 'clamp(1.8rem, 5vw, 3.2rem)',
+            fontSize: 'clamp(2.2rem, 6vw, 3.8rem)',
             fontWeight: 900,
-            lineHeight: 1.15,
-            marginBottom: '1.25rem',
+            lineHeight: 1.1,
+            marginBottom: '1.5rem',
             animation: 'fadeUp .6s .1s ease both',
+            textWrap: 'balance',
+            maxWidth: '960px',
+            margin: '0 auto 1.5rem',
           }}>
             Dinamika Pengangguran Pulau Jawa:
-            <br />
-            <span style={{ background: 'linear-gradient(90deg,#F97316,#FBBF24,#F97316)', backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'shimmer 3s linear infinite' }}>
-              Era Sebelum, Saat, dan&nbsp;Pasca Pandemi
+            <span style={{
+              display: 'block',
+              marginTop: '0.5rem',
+              background: 'linear-gradient(90deg,#F97316,#FBBF24,#F97316)',
+              backgroundSize: '200% auto',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              animation: 'shimmer 3s linear infinite'
+            }}>
+              Era Sebelum, Saat, dan Pasca Pandemi
             </span>
           </h1>
 
