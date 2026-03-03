@@ -51,13 +51,13 @@ const teamMembers = [
 ];
 
 const provinceColors = [
-  { name: 'DKI Jakarta', color: '#008080' },
-  { name: 'Jawa Barat', color: '#F97316' },
-  { name: 'Jawa Timur', color: '#78350F' },
-  { name: 'Jawa Tengah', color: '#22C55E' },
-  { name: 'DI Yogyakarta', color: '#A855F7' },
-  { name: 'Banten', color: '#EF4444' },
-  { name: 'Rata-rata', color: '#14532D' },
+  { name: 'DKI Jakarta', color: '#06B6D4' }, // Cyan
+  { name: 'Jawa Barat', color: '#F97316' },  // Orange
+  { name: 'Jawa Timur', color: '#FBBF24' },  // Amber/Yellow
+  { name: 'Jawa Tengah', color: '#34D399' }, // Emerald Light
+  { name: 'DI Yogyakarta', color: '#A78BFA' }, // Purple
+  { name: 'Banten', color: '#F43F5E' },      // Rose/Red
+  { name: 'Rata-rata', color: '#FFFFFF' },   // White with glow
 ];
 
 /* quick stat di hero */
@@ -72,12 +72,13 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: 'rgba(15,23,42,0.95)',
-      border: '1px solid rgba(249,115,22,0.3)',
-      borderRadius: 16,
-      padding: '12px 18px',
-      boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-      backdropFilter: 'blur(8px)',
+      background: 'rgba(11, 17, 33, 0.75)', /* Dark glass background */
+      border: '1px solid rgba(255, 255, 255, 0.1)', /* Halus */
+      borderRadius: '16px',
+      padding: '16px 20px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)', /* Bayangan elegan */
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
       minWidth: 200,
     }}>
       <p style={{ color: '#F97316', fontWeight: 800, marginBottom: 8, fontFamily: 'Outfit,sans-serif', fontSize: 14 }}>
@@ -178,7 +179,7 @@ const ProvinceCard = ({ p }) => {
           flex: 1, background: '#F8FAFC', borderRadius: 12,
           padding: '.6rem .75rem', textAlign: 'center',
         }}>
-          <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Terkini</div>
+          <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Th 2025</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: p.color, fontFamily: 'Outfit,sans-serif' }}>
             {String(latest).replace('.', ',')}%
           </div>
@@ -461,11 +462,11 @@ const App = () => {
 
           <div className="card" style={{ padding: '2.5rem', overflow: 'hidden' }}>
             <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '1.15rem', fontWeight: 800, color: '#0F172A', marginBottom: '.25rem' }}>
-                Tingkat Pengangguran Terbuka (TPT) Per Semester
+              <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '1.25rem', fontWeight: 800, color: '#F8FAFC', marginBottom: '.35rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Tren Tingkat Pengangguran Terbuka (TPT) Berdasarkan Fase
               </h3>
               <p style={{ fontSize: '.85rem', color: '#94A3B8', fontStyle: 'italic' }}>
-                Data ditampilkan dalam persentase (%) berdasarkan laporan BPS per Februari &amp; Agustus.
+                Data ditampilkan dalam persentase (%) berdasarkan laporan berkala BPS (Februari &amp; Agustus).
               </p>
             </div>
 
@@ -486,8 +487,10 @@ const App = () => {
                       </Bar>
                     ))}
 
-                    <Line type="monotone" dataKey="Rata-rata" stroke={provinceColors[6].color} strokeWidth={4} dot={{ r: 7, fill: provinceColors[6].color, strokeWidth: 3, stroke: 'white' }}>
-                      <LabelList dataKey="Rata-rata" position="top" offset={15} style={{ fontSize: 15, fill: provinceColors[6].color, fontWeight: 700 }} formatter={(val) => val.toFixed(2).replace('.', ',')} />
+                    <Line type="monotone" dataKey="Rata-rata" stroke={provinceColors[6].color} strokeWidth={4}
+                      style={{ filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 0.8))' }}
+                      dot={{ r: 7, fill: '#0F172A', strokeWidth: 3, stroke: provinceColors[6].color }}>
+                      <LabelList dataKey="Rata-rata" position="top" offset={15} style={{ fontSize: 15, fill: provinceColors[6].color, fontWeight: 800, filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.5))' }} formatter={(val) => val.toFixed(2).replace('.', ',')} />
                     </Line>
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -495,19 +498,20 @@ const App = () => {
                 {/* Phase labels */}
                 <div style={{
                   position: 'absolute', left: 30, bottom: 150,
-                  width: 'calc(100% - 60px)', height: 48,
-                  display: 'flex', fontWeight: 900, fontSize: 11, color: '#fff',
-                  borderRadius: 14, overflow: 'hidden',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  width: 'calc(100% - 60px)', height: 38,
+                  display: 'flex', fontWeight: 800, fontSize: 11, color: '#fff',
+                  borderRadius: 99, overflow: 'hidden',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                  border: '1px solid rgba(255,255,255,0.1)'
                 }}>
-                  <div style={{ flex: `0 0 ${(5 / 16) * 100}%`, background: 'linear-gradient(90deg,#2563EB,#3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1 }}>
-                    ◀ PHASE 1: SEBELUM PANDEMI ▶
+                  <div style={{ flex: `0 0 ${(5 / 16) * 100}%`, background: 'linear-gradient(90deg, #1E3A8A, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1 }}>
+                    ◀ FASE 1: SEBELUM PANDEMI ▶
                   </div>
-                  <div style={{ flex: `0 0 ${(4 / 16) * 100}%`, background: 'linear-gradient(90deg,#DC2626,#EF4444)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1, borderLeft: '2px solid rgba(255,255,255,.2)', borderRight: '2px solid rgba(255,255,255,.2)' }}>
-                    PHASE 2: SAAT PANDEMI (COVID-19)
+                  <div style={{ flex: `0 0 ${(4 / 16) * 100}%`, background: 'linear-gradient(90deg, #991B1B, #EF4444)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1, borderLeft: '2px solid rgba(15,23,42,1)', borderRight: '2px solid rgba(15,23,42,1)' }}>
+                    FASE 2: SAAT PANDEMI (COVID-19)
                   </div>
-                  <div style={{ flex: `0 0 ${(7 / 16) * 100}%`, background: 'linear-gradient(90deg,#059669,#10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1 }}>
-                    PHASE 3: SETELAH PANDEMI (PEMULIHAN) ▶
+                  <div style={{ flex: `0 0 ${(7 / 16) * 100}%`, background: 'linear-gradient(90deg, #065F46, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1 }}>
+                    FASE 3: SETELAH PANDEMI (PEMULIHAN) ▶
                   </div>
                 </div>
               </div>
