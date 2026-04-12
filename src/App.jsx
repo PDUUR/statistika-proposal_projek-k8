@@ -12,9 +12,11 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  LabelList
+  LabelList,
 } from 'recharts';
-import { Users, BarChart3, Info, Calendar, TrendingUp, BookOpen, Award, ChevronDown } from 'lucide-react';
+import { Users, BarChart3, Info, TrendingUp, BookOpen, Award, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import './App.css';
 
 /* ─────────────────────────────────────────────────────────────
    DATA (tidak diubah)
@@ -40,30 +42,67 @@ const data = [
 
 const teamMembers = [
   { nama: "Aullivhya Shavana Zeevania", nim: "G2401251002" },
-  { nama: "Albi Ahmad Andika", nim: "D1401251053" },
-  { nama: "Wisnu Aji Saputra", nim: "E3401251016" },
-  { nama: "Muhammad Zacky", nim: "E3401251141" },
+  { nama: "Albi Ahmad Andika",          nim: "D1401251053" },
+  { nama: "Wisnu Aji Saputra",          nim: "E3401251016" },
+  { nama: "Muhammad Zacky",             nim: "E3401251141" },
   { nama: "M Faturrahman Almukhlisin", nim: "G0401251042" },
-  { nama: "Naufal Fauzan", nim: "G4401251094" },
-  { nama: "Syaqila Shafa Melani", nim: "G4401251121" },
-  { nama: "Silviani", nim: "G8401251047" },
-  { nama: "Zafira Zahrani", nim: "G8401251066" },
+  { nama: "Naufal Fauzan",              nim: "G4401251094" },
+  { nama: "Syaqila Shafa Melani",       nim: "G4401251121" },
+  { nama: "Silviani",                   nim: "G8401251047" },
+  { nama: "Zafira Zahrani",             nim: "G8401251066" },
 ];
 
 const provinceColors = [
-  { name: 'DKI Jakarta', color: '#06B6D4' },
-  { name: 'Jawa Barat', color: '#F97316' },
-  { name: 'Jawa Timur', color: '#B45309' },
-  { name: 'Jawa Tengah', color: '#10B981' },
-  { name: 'DI Yogyakarta', color: '#8B5CF6' },
-  { name: 'Banten', color: '#EF4444' },
-  { name: 'Rata-rata', color: '#1E293B' },   // Dark slate/indigo for contrast
+  { name: 'DKI Jakarta',   color: '#22D3EE' },
+  { name: 'Jawa Barat',    color: '#F472B6' },
+  { name: 'Jawa Timur',    color: '#FB923C' },
+  { name: 'Jawa Tengah',   color: '#34D399' },
+  { name: 'DI Yogyakarta', color: '#A78BFA' },
+  { name: 'Banten',        color: '#FACC15' },
+  { name: 'Rata-rata',     color: '#E2E8F0' },
 ];
 
-/* quick stat di hero */
 const peakAvg = Math.max(...data.map(d => d['Rata-rata']));
-const latestAvg = data[data.length - 1]['Rata-rata'];
-const latestLabel = data[data.length - 1].label;
+
+/* ─────────────────────────────────────────────────────────────
+   ANIMATION CONSTANTS — Quartic Ease Out
+   ───────────────────────────────────────────────────────────── */
+const EASE_QUARTIC = [0.22, 1, 0.36, 1];
+
+/* ── Global page section transition ── */
+const pageVariants = {
+  initial: { opacity: 0, x: -20, filter: "blur(10px)" },
+  animate: { opacity: 1, x: 0, filter: "blur(0px)", transition: { duration: 0.6, ease: EASE_QUARTIC } },
+  exit:    { opacity: 0, x: 20, filter: "blur(10px)", transition: { duration: 0.6, ease: EASE_QUARTIC } },
+};
+
+/* ── Staggered title wrapping ── */
+const titleContainerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+};
+
+const titleLineVariants = {
+  hidden: { opacity: 0, y: 20, filter: "blur(6px)" },
+  visible: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.6, ease: EASE_QUARTIC } },
+};
+
+/* ── Wave Micro-Interaction Constants ── */
+const childVariants = {
+  hidden:  { opacity: 0, x: -10 },
+  visible: (i = 0) => ({
+    opacity: 1, x: 0,
+    transition: { duration: 0.5, delay: i * 0.06, ease: EASE_QUARTIC },
+  }),
+};
+
+/* ── Card hover ── */
+const cardHover = (color) => ({
+  scale: 1.02,
+  boxShadow: `0 16px 48px rgba(0,0,0,0.6), 0 0 32px ${color}40`,
+  borderColor: `${color}44`,
+  transition: { duration: 0.2, ease: EASE_QUARTIC },
+});
 
 /* ─────────────────────────────────────────────────────────────
    CUSTOM TOOLTIP
@@ -72,23 +111,23 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: 'rgba(255, 255, 255, 0.8)', /* White glass background */
-      border: '1px solid var(--border-light)',
-      borderRadius: '16px',
-      padding: '16px 20px',
-      boxShadow: '0 12px 40px rgba(15, 23, 42, 0.1)',
-      backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)',
-      minWidth: 200,
+      background: 'rgba(13, 27, 46, 0.92)',
+      border: '0.5px solid rgba(34,211,238,0.25)',
+      borderRadius: 16,
+      padding: '14px 18px',
+      boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(34,211,238,0.1)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      minWidth: 210,
     }}>
-      <p style={{ color: '#F97316', fontWeight: 800, marginBottom: 8, fontFamily: 'Outfit,sans-serif', fontSize: 14 }}>
+      <p style={{ color: '#22D3EE', fontWeight: 800, marginBottom: 10, fontFamily: 'Outfit,sans-serif', fontSize: 13, letterSpacing: .5 }}>
         {label}
       </p>
       {payload.map((entry) => (
-        <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: entry.color, flexShrink: 0 }} />
-          <span style={{ color: 'var(--text-muted)', fontSize: 12, flex: 1 }}>{entry.name}</span>
-          <span style={{ color: 'var(--text-main)', fontWeight: 700, fontSize: 13 }}>
+        <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color, flexShrink: 0, boxShadow: `0 0 6px ${entry.color}` }} />
+          <span style={{ color: '#94A3B8', fontSize: 12, flex: 1 }}>{entry.name}</span>
+          <span style={{ color: '#E2E8F0', fontWeight: 700, fontSize: 13 }}>
             {Number(entry.value).toFixed(2).replace('.', ',')}%
           </span>
         </div>
@@ -98,7 +137,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   ANIMATED COUNTER
+   ANIMATED COUNTER (elastic ease-out)
    ───────────────────────────────────────────────────────────── */
 const AnimCounter = ({ target, suffix = '', decimals = 0 }) => {
   const [count, setCount] = useState(0);
@@ -109,11 +148,11 @@ const AnimCounter = ({ target, suffix = '', decimals = 0 }) => {
     const obs = new IntersectionObserver(([e]) => {
       if (e.isIntersecting && !started.current) {
         started.current = true;
-        const dur = 1400;
+        const dur = 1600;
         const start = performance.now();
         const step = (now) => {
           const progress = Math.min((now - start) / dur, 1);
-          const ease = 1 - Math.pow(1 - progress, 3);
+          const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
           setCount(target * ease);
           if (progress < 1) requestAnimationFrame(step);
         };
@@ -124,487 +163,577 @@ const AnimCounter = ({ target, suffix = '', decimals = 0 }) => {
     return () => obs.disconnect();
   }, [target]);
 
-  return (
-    <span ref={ref}>
-      {count.toFixed(decimals).replace('.', ',')}{suffix}
-    </span>
-  );
+  return <span ref={ref}>{count.toFixed(decimals).replace('.', ',')}{suffix}</span>;
 };
 
 /* ─────────────────────────────────────────────────────────────
-   PROVINCE CARD (individual trend)
+   PROVINCE CARD (Bento child) — with wave micro-interaction
    ───────────────────────────────────────────────────────────── */
-const ProvinceCard = ({ p }) => {
+const ProvinceCard = ({ p, index }) => {
   const latest = data[data.length - 1][p.name];
-  const peak = Math.max(...data.map(d => d[p.name]));
+  const peak   = Math.max(...data.map(d => d[p.name]));
 
   return (
-    <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <motion.div
+      className="card"
+      custom={index}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.15 }}
+      variants={{
+        hidden:  { opacity: 0, y: 28 },
+        visible: {
+          opacity: 1, y: 0,
+          transition: { duration: 0.5, delay: index * 0.07, ease: EASE_QUARTIC },
+        },
+      }}
+      whileHover={cardHover(p.color)}
+      style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', cursor: 'default' }}
+    >
       {/* header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <motion.div
+        variants={childVariants} custom={0}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem' }}>
-          <span style={{
-            width: 14, height: 14, borderRadius: '50%',
-            background: p.color, flexShrink: 0,
-            boxShadow: `0 0 0 4px ${p.color}22`
-          }} />
-          <h3 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1rem', color: '#0F172A' }}>
-            {p.name}
-          </h3>
+          <span style={{ width: 12, height: 12, borderRadius: '50%', background: p.color, flexShrink: 0, boxShadow: `0 0 10px ${p.color}` }} />
+          <h3 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1rem', color: '#E2E8F0' }}>{p.name}</h3>
         </div>
-        <div style={{
-          background: `${p.color}18`,
-          color: p.color,
-          borderRadius: 99,
-          padding: '2px 12px',
-          fontSize: 12,
-          fontWeight: 700,
-        }}>
+        <div style={{ background: `${p.color}1A`, color: p.color, borderRadius: 99, padding: '2px 12px', fontSize: 12, fontWeight: 700, border: `0.5px solid ${p.color}44` }}>
           {String(latest).replace('.', ',')}%
         </div>
-      </div>
+      </motion.div>
 
-      {/* mini stat */}
-      <div style={{ display: 'flex', gap: '.75rem' }}>
-        <div style={{
-          flex: 1, background: '#F8FAFC', borderRadius: 12,
-          padding: '.6rem .75rem', textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Puncak</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: '#EF4444', fontFamily: 'Outfit,sans-serif' }}>
-            {String(peak).replace('.', ',')}%
-          </div>
+      {/* mini stats */}
+      <motion.div variants={childVariants} custom={1} style={{ display: 'flex', gap: '.65rem' }}>
+        <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '.55rem .7rem', textAlign: 'center', border: '0.5px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontSize: 9, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2 }}>puncak</div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: '#F87171', fontFamily: 'Outfit,sans-serif' }}>{String(peak).replace('.', ',')}%</div>
         </div>
-        <div style={{
-          flex: 1, background: '#F8FAFC', borderRadius: 12,
-          padding: '.6rem .75rem', textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Th 2025</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: p.color, fontFamily: 'Outfit,sans-serif' }}>
-            {String(latest).replace('.', ',')}%
-          </div>
+        <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '.55rem .7rem', textAlign: 'center', border: '0.5px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontSize: 9, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2 }}>th 2025</div>
+          <div style={{ fontSize: 17, fontWeight: 900, color: p.color, fontFamily: 'Outfit,sans-serif' }}>{String(latest).replace('.', ',')}%</div>
         </div>
-      </div>
+      </motion.div>
 
       {/* spark chart */}
-      <div style={{ width: '100%', height: 140 }}>
+      <motion.div variants={childVariants} custom={2} style={{ width: '100%', height: 130 }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
-              <linearGradient id={`grad-${p.name.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={p.color} stopOpacity={0.25} />
-                <stop offset="95%" stopColor={p.color} stopOpacity={0} />
+              <linearGradient id={`sparkGrad-${p.name.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor={p.color} stopOpacity={0.35} />
+                <stop offset="95%" stopColor={p.color} stopOpacity={0}    />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-            <XAxis dataKey="label" fontSize={8} interval={3} tick={{ fill: '#94A3B8' }} axisLine={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1E3A5F" vertical={true} horizontal={true} />
+            <XAxis dataKey="label" fontSize={8} interval={3} tick={{ fill: '#475569' }} axisLine={false} tickLine={false} />
             <YAxis domain={[0, 13]} hide />
             <Tooltip content={<CustomTooltip />} />
-            <Area
-              type="monotone"
-              dataKey={p.name}
-              stroke={p.color}
-              fill={`url(#grad-${p.name.replace(/\s/g, '')})`}
-              strokeWidth={3}
-              dot={{ r: 3, fill: p.color, strokeWidth: 2, stroke: 'white' }}
-              activeDot={{ r: 5, fill: p.color }}
+            <Area type="monotone" dataKey={p.name} stroke={p.color} fill={`url(#sparkGrad-${p.name.replace(/\s/g, '')})`} strokeWidth={2.5}
+              dot={{ r: 2.5, fill: p.color, strokeWidth: 1.5, stroke: '#0F172A' }}
+              activeDot={{ r: 5, fill: p.color, stroke: '#0F172A', strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
 /* ─────────────────────────────────────────────────────────────
-   MAIN APP
+   SECTION HEADER — animated icon + title with wave effect
+   ───────────────────────────────────────────────────────────── */
+const SectionHeader = ({ icon, title, right }) => (
+  <motion.div
+    className="section-header"
+    style={{ justifyContent: right ? 'space-between' : undefined, marginBottom: '3rem' }}
+    variants={{
+      hidden: { opacity: 0, y: 20 },
+      visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE_QUARTIC } }
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+      <motion.span variants={childVariants} custom={0}>{icon}</motion.span>
+      <motion.h2
+        style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1.6rem' }}
+        variants={childVariants} custom={1}
+      >
+        {title}
+      </motion.h2>
+    </div>
+    {right && <motion.div variants={childVariants} custom={2}>{right}</motion.div>}
+  </motion.div>
+);
+
+/* ─────────────────────────────────────────────────────────────
+   MAIN APP — Now styled as a true Single Page App (SPA)
    ───────────────────────────────────────────────────────────── */
 const App = () => {
   const [activeNav, setActiveNav] = useState('beranda');
   const chartScrollRef = useRef(null);
 
   const navItems = [
-    { id: 'beranda', label: 'Beranda' },
-    { id: 'tim', label: 'Tim' },
+    { id: 'beranda',     label: 'Beranda'     },
+    { id: 'tim',         label: 'Tim'         },
     { id: 'visualisasi', label: 'Visualisasi' },
-    { id: 'tren', label: 'Tren Daerah' },
-    { id: 'metodologi', label: 'Metodologi' },
+    { id: 'tren',        label: 'Tren Daerah' },
+    { id: 'metodologi',  label: 'Metodologi'  },
   ];
 
-  const scrollTo = (id) => {
-    const el = document.getElementById(id);
-    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  const navigateTo = (id) => {
     setActiveNav(id);
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Reset scroll position when switching page
   };
 
-  /* track active section on scroll */
-  useEffect(() => {
-    const sectionIds = navItems.map(n => n.id);
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) setActiveNav(e.target.id); });
-    }, { threshold: 0.4 });
-    sectionIds.forEach(id => { const el = document.getElementById(id); if (el) obs.observe(el); });
-    return () => obs.disconnect();
-  }, []);
+  const bentoClass = (i) => {
+    const patterns = ['bento-1', 'bento-2', 'bento-3', 'bento-wide', 'bento-3', 'bento-tall', 'bento-1'];
+    return patterns[i % patterns.length];
+  };
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', fontFamily: 'Inter, sans-serif', color: '#0F172A' }}>
+    <div style={{ background: '#0F172A', minHeight: '100vh', fontFamily: 'Outfit, sans-serif', color: '#E2E8F0', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── STICKY NAV ─── */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(255,255,255,0.85)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid #E2E8F0',
-        boxShadow: '0 2px 20px rgba(15,23,42,0.06)',
-      }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60 }}>
-          <span style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 900, fontSize: '1.1rem', color: '#F97316' }}>
-            Kelompok<span style={{ color: '#0F172A' }}> 8</span>
-          </span>
-          <div style={{ display: 'flex', gap: '.25rem' }}>
-            {navItems.map(n => (
-              <button
-                key={n.id}
-                id={`nav-${n.id}`}
-                onClick={() => scrollTo(n.id)}
+      {/* ── FLOATING PILL NAV with layoutId sliding indicator ── */}
+      <nav className="pill-nav" aria-label="Navigasi utama">
+        <span className="pill-nav__logo">K<span style={{ color: '#A78BFA' }}>8</span></span>
+        {navItems.map(n => (
+          <button
+            key={n.id}
+            id={`nav-${n.id}`}
+            className="pill-nav__btn"
+            onClick={() => navigateTo(n.id)}
+            style={{ position: 'relative' }}
+          >
+            {activeNav === n.id && (
+              <motion.span
+                layoutId="nav-active-pill"
                 style={{
-                  padding: '.4rem .9rem',
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(135deg, #22D3EE, #A78BFA)', // Solid gradient, explicitly not using backgroundClip
                   borderRadius: 99,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '.85rem',
-                  transition: 'all .2s',
-                  background: activeNav === n.id ? '#F97316' : 'transparent',
-                  color: activeNav === n.id ? '#fff' : '#64748B',
+                  zIndex: -1,
+                  boxShadow: '0 0 18px rgba(34,211,238,0.45)',
                 }}
-              >
-                {n.label}
-              </button>
-            ))}
-          </div>
-        </div>
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+              />
+            )}
+            <span style={{
+              position: 'relative', zIndex: 1,
+              color: activeNav === n.id ? '#0F172A' : '#64748B',
+              fontWeight: activeNav === n.id ? 800 : 600,
+              transition: 'color 0.2s',
+              fontSize: '.82rem',
+              fontFamily: 'Outfit, sans-serif',
+            }}>
+              {n.label}
+            </span>
+          </button>
+        ))}
       </nav>
 
-      {/* ── HERO ─── */}
-      <header id="beranda" style={{
-        position: 'relative',
-        overflow: 'hidden',
-        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
-        color: '#fff',
-        padding: '7rem 2rem 8rem',
-        textAlign: 'center',
-      }}>
-        {/* Decorative blobs */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          <div style={{ position: 'absolute', top: '-20%', left: '5%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(249,115,22,0.2) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-          <div style={{ position: 'absolute', bottom: '-10%', right: '5%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle, rgba(168,85,247,0.15) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-          <div style={{ position: 'absolute', top: '40%', right: '20%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(34,197,94,0.1) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-        </div>
+      {/* ── MAIN CONTENT RENDERER — using AnimatePresence with wait mode ── */}
+      <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        <AnimatePresence mode="wait">
 
-        <div style={{ position: 'relative', maxWidth: 850, margin: '0 auto' }}>
-          {/* Badge */}
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '.5rem',
-            background: 'rgba(249,115,22,0.15)',
-            border: '1px solid rgba(249,115,22,0.35)',
-            borderRadius: 99, padding: '.35rem 1.1rem',
-            fontSize: '.75rem', fontWeight: 700, letterSpacing: 2,
-            textTransform: 'uppercase', color: '#FDBA74',
-            marginBottom: '1.5rem',
-            animation: 'fadeUp .5s ease forwards',
-          }}>
-            <BookOpen size={14} />
-            Proposal Proyek Analisis Data
-          </div>
-
-          <h1 style={{
-            fontFamily: 'Outfit, sans-serif',
-            fontSize: 'clamp(2.2rem, 6vw, 3.8rem)',
-            fontWeight: 900,
-            lineHeight: 1.1,
-            marginBottom: '1.5rem',
-            animation: 'fadeUp .6s .1s ease both',
-            textWrap: 'balance',
-            maxWidth: '960px',
-            margin: '0 auto 1.5rem',
-          }}>
-            Dinamika Pengangguran Pulau Jawa:
-            <span style={{
-              display: 'block',
-              marginTop: '0.5rem',
-              background: 'linear-gradient(90deg,#F97316,#FBBF24,#F97316)',
-              backgroundSize: '200% auto',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              animation: 'shimmer 3s linear infinite'
-            }}>
-              Era Sebelum, Saat, dan Pasca Pandemi
-            </span>
-          </h1>
-
-          <p style={{ color: '#94A3B8', fontSize: '1.05rem', maxWidth: 600, margin: '0 auto 2.5rem', lineHeight: 1.75, animation: 'fadeUp .6s .2s ease both' }}>
-            Kajian mendalam mengenai <strong style={{ color: '#CBD5E1' }}>Tingkat Pengangguran Terbuka (TPT)</strong> di 6 Provinsi Pulau Jawa selama periode 2018–2025 berdasarkan data BPS.
-          </p>
-
-          {/* Stat cards */}
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', animation: 'fadeUp .6s .3s ease both' }}>
-            {[
-              { label: 'Periode Analisis', value: '2018 – 2025' },
-              { label: 'Provinsi Diamati', value: '6 Provinsi' },
-              { label: 'Total Titik Data', value: <><AnimCounter target={16} />× 7 seri</> },
-              { label: 'Puncak Rata-rata', value: <><AnimCounter target={peakAvg} decimals={2} />%</> },
-            ].map((s, i) => (
-              <div key={i} style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: 16, padding: '1rem 1.5rem',
-                backdropFilter: 'blur(8px)',
-                textAlign: 'center', minWidth: 140,
-              }}>
-                <div style={{ fontSize: '1.3rem', fontWeight: 900, fontFamily: 'Outfit,sans-serif', color: '#F97316' }}>{s.value}</div>
-                <div style={{ fontSize: '.75rem', color: '#64748B', marginTop: .25, fontWeight: 500 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Scroll cue */}
-          <div onClick={() => scrollTo('tim')} style={{
-            position: 'absolute', bottom: '-4rem', left: '50%',
-            transform: 'translateX(-50%)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-            cursor: 'pointer', color: '#475569', animation: 'scrollBounce 1.6s ease-in-out infinite',
-          }}>
-            <span style={{ fontSize: '.7rem', fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase' }}>Scroll</span>
-            <ChevronDown size={18} />
-          </div>
-        </div>
-      </header>
-
-      {/* ── MAIN CONTENT ─── */}
-      <main style={{ maxWidth: 1280, margin: '0 auto', padding: '5rem 2rem', display: 'flex', flexDirection: 'column', gap: '5rem' }}>
-
-        {/* ─── 2. TIM ─── */}
-        <section id="tim">
-          <div className="section-header">
-            <Users />
-            <h2>Susunan Tim Pelaksana</h2>
-          </div>
-
-          <div className="card" style={{ overflow: 'hidden' }}>
-            {/* header row */}
-            <div style={{
-              display: 'grid', gridTemplateColumns: '60px 1fr 1fr',
-              background: 'linear-gradient(90deg,#0F172A,#1E293B)',
-              color: '#fff', padding: '1rem 1.5rem',
-              fontWeight: 700, fontSize: '.8rem', textTransform: 'uppercase', letterSpacing: 1.5,
-            }}>
-              <span style={{ textAlign: 'center' }}>No.</span>
-              <span>Nama Lengkap Anggota</span>
-              <span>Nomor Induk Mahasiswa (NIM)</span>
-            </div>
-
-            {teamMembers.map((member, index) => (
-              <div key={index} style={{
-                display: 'grid',
-                gridTemplateColumns: '60px 1fr 1fr',
-                padding: '1rem 1.5rem',
-                alignItems: 'center',
-                borderBottom: index < teamMembers.length - 1 ? '1px solid #F1F5F9' : 'none',
-                background: index % 2 === 0 ? '#fff' : '#FAFAFA',
-                transition: 'background .2s',
+          {/* ────────────────── BERANDA ────────────────── */}
+          {activeNav === 'beranda' && (
+            <motion.header
+              key="beranda"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{
+                position: 'relative', overflow: 'hidden',
+                flex: 1, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', textAlign: 'center', padding: '8rem 2rem 6rem',
               }}
-                onMouseEnter={e => e.currentTarget.style.background = '#FFF7ED'}
-                onMouseLeave={e => e.currentTarget.style.background = index % 2 === 0 ? '#fff' : '#FAFAFA'}
-              >
-                <span style={{ textAlign: 'center', fontWeight: 700, color: '#CBD5E1', fontFamily: 'monospace', fontSize: '1rem' }}>
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                    background: `hsl(${index * 40 + 15}, 75%, 55%)`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#fff', fontWeight: 800, fontSize: '.85rem',
+            >
+              {/* Mesh gradient background */}
+              <div style={{
+                position: 'absolute', inset: 0, zIndex: 0,
+                background: `
+                  radial-gradient(ellipse 80% 60% at 20% 30%, rgba(34,211,238,0.12) 0%, transparent 60%),
+                  radial-gradient(ellipse 60% 50% at 80% 70%, rgba(167,139,250,0.12) 0%, transparent 60%),
+                  radial-gradient(ellipse 50% 40% at 50% 10%, rgba(249,115,22,0.08) 0%, transparent 60%),
+                  linear-gradient(180deg, #0F172A 0%, #061020 100%)
+                `,
+                animation: 'meshMove 12s ease-in-out infinite',
+                backgroundSize: '200% 200%',
+              }} />
+              <div style={{
+                position: 'absolute', inset: 0, zIndex: 1,
+                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)',
+                backgroundSize: '32px 32px', pointerEvents: 'none',
+              }} />
+
+              <div style={{ position: 'relative', zIndex: 2, maxWidth: 900, margin: '0 auto' }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, ease: EASE_QUARTIC, delay: 0.2 }}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '.5rem',
+                    background: 'rgba(34,211,238,0.08)', border: '0.5px solid rgba(34,211,238,0.3)',
+                    borderRadius: 99, padding: '.3rem 1rem',
+                    fontSize: '.72rem', fontWeight: 700, letterSpacing: 2.5,
+                    textTransform: 'uppercase', color: '#22D3EE', marginBottom: '1.75rem',
+                  }}
+                >
+                  <BookOpen size={13} />
+                  Proposal Proyek Analisis Data
+                </motion.div>
+
+                {/* ── STAGGERED LINE TITLE ── */}
+                <motion.h1
+                  variants={titleContainerVariants}
+                  initial="hidden" animate="visible"
+                  style={{
+                    fontFamily: 'Outfit, sans-serif',
+                    fontSize: 'clamp(2.1rem, 6vw, 3.8rem)',
+                    fontWeight: 900, lineHeight: 1.08,
+                    letterSpacing: '-0.5px', marginBottom: '2.75rem',
+                    color: '#E2E8F0',
+                  }}
+                >
+                  <motion.span variants={titleLineVariants} style={{ display: 'block' }}>
+                    Dinamika Pengangguran
+                  </motion.span>
+                  <motion.span variants={titleLineVariants} style={{ display: 'block' }}>
+                    Pulau Jawa
+                  </motion.span>
+                  <motion.span variants={titleLineVariants} style={{
+                    display: 'block', marginTop: '1rem',
+                    fontSize: 'clamp(1rem, 3.5vw, 1.8rem)',
+                    whiteSpace: 'nowrap',
+                    background: 'linear-gradient(90deg, #22D3EE, #A78BFA, #22D3EE)',
+                    backgroundSize: '200% auto',
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                    animation: 'shimmer 4s linear infinite',
                   }}>
-                    {member.nama.charAt(0)}
-                  </div>
-                  <span style={{ fontWeight: 600, color: '#1E293B', fontSize: '.95rem' }}>{member.nama}</span>
+                    Era Sebelum, Saat, dan Pasca Pandemi
+                  </motion.span>
+                </motion.h1>
+
+                {/* Stat chips */}
+                <motion.div
+                  initial="hidden" animate="visible"
+                  variants={{
+                    hidden: {},
+                    visible: { transition: { staggerChildren: 0.09, delayChildren: 0.6 } },
+                  }}
+                  style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}
+                >
+                  {[
+                    { label: 'periode analisis',  value: '2018 – 2025' },
+                    { label: 'provinsi diamati',  value: '6 Provinsi'  },
+                    { label: 'total titik data',  value: <><AnimCounter target={16} />× 7 seri</> },
+                    { label: 'puncak rata-rata',  value: <><AnimCounter target={peakAvg} decimals={2} />%</> },
+                  ].map((s, i) => (
+                    <motion.div
+                      key={i} className="stat-chip"
+                      variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE_QUARTIC } } }}
+                      whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+                    >
+                      <div className="stat-chip__value">{s.value}</div>
+                      <div className="stat-chip__label">{s.label}</div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                <motion.div
+                  onClick={() => navigateTo('tim')}
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  transition={{ delay: 1.1, duration: 0.6 }}
+                  style={{
+                    marginTop: '4rem',
+                    display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    cursor: 'pointer', color: '#334155', animation: 'scrollBounce 1.8s ease-in-out infinite',
+                  }}
+                >
+                  <span style={{ fontSize: '.65rem', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase' }}>lanjutkan</span>
+                  <ChevronDown size={18} />
+                </motion.div>
+              </div>
+            </motion.header>
+          )}
+
+          {/* ────────────────── TIM ────────────────── */}
+          {activeNav === 'tim' && (
+            <motion.main
+              key="tim"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ padding: '8rem 2rem 5rem', maxWidth: 1000, margin: '0 auto', width: '100%' }}
+            >
+              <SectionHeader icon={<Users style={{ color: '#22D3EE', width: 32, height: 32 }} />} title="Susunan Tim Pelaksana" />
+              
+              <div className="card" style={{ overflow: 'hidden' }}>
+                <div style={{
+                  display: 'grid', gridTemplateColumns: '60px 1fr 1fr',
+                  background: 'linear-gradient(90deg, rgba(34,211,238,0.12), rgba(167,139,250,0.08))',
+                  borderBottom: '0.5px solid rgba(255,255,255,0.08)',
+                  color: '#64748B', padding: '1rem 1.5rem',
+                  fontWeight: 700, fontSize: '.75rem', textTransform: 'uppercase', letterSpacing: 1.8,
+                }}>
+                  <span style={{ textAlign: 'center' }}>No.</span>
+                  <span>Nama Lengkap Anggota</span>
+                  <span>Nomor Induk Mahasiswa (NIM)</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                {teamMembers.map((member, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0, transition: { duration: 0.5, delay: index * 0.05 + 0.2, ease: EASE_QUARTIC } }}
+                    style={{
+                      display: 'grid', gridTemplateColumns: '60px 1fr 1fr',
+                      padding: '1rem 1.5rem', alignItems: 'center',
+                      borderBottom: index < teamMembers.length - 1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none',
+                      background: index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
+                    }}
+                    whileHover={{ background: 'rgba(34,211,238,0.04)', x: 4, transition: { duration: 0.2 } }}
+                  >
+                    <span style={{ textAlign: 'center', fontWeight: 700, color: '#334155', fontFamily: 'monospace', fontSize: '1rem' }}>
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+                      <div style={{
+                        width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                        background: `linear-gradient(135deg, hsl(${index * 40 + 180}, 80%, 50%), hsl(${index * 40 + 220}, 80%, 60%))`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#0F172A', fontWeight: 800, fontSize: '.85rem',
+                        boxShadow: `0 0 12px hsl(${index * 40 + 180}, 80%, 50%, 0.35)`,
+                      }}>
+                        {member.nama.charAt(0)}
+                      </div>
+                      <span style={{ fontWeight: 600, color: '#CBD5E1', fontSize: '.9rem' }}>{member.nama}</span>
+                    </div>
+                    <div>
+                      <span style={{
+                        fontFamily: 'monospace', fontWeight: 700, fontSize: '.88rem',
+                        color: '#22D3EE', letterSpacing: .8,
+                        background: 'rgba(34,211,238,0.08)', padding: '.2rem .75rem', borderRadius: 8,
+                        border: '0.5px solid rgba(34,211,238,0.2)',
+                      }}>
+                        {member.nim}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.main>
+          )}
+
+          {/* ────────────────── VISUALISASI ────────────────── */}
+          {activeNav === 'visualisasi' && (
+            <motion.main
+              key="visualisasi"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ padding: '8rem 2rem 5rem', maxWidth: 1280, margin: '0 auto', width: '100%' }}
+            >
+              <SectionHeader
+                icon={<BarChart3 style={{ color: '#22D3EE', width: 32, height: 32 }} />}
+                title="Visualisasi Data TPT Terintegrasi"
+                right={
                   <span style={{
-                    fontFamily: 'monospace', fontWeight: 700, fontSize: '.9rem',
-                    color: '#F97316', letterSpacing: 1,
-                    background: '#FFF7ED', padding: '.2rem .75rem', borderRadius: 8,
-                    border: '1px solid #FED7AA',
-                  }}>
-                    {member.nim}
-                  </span>
+                    background: 'linear-gradient(135deg,#22D3EE,#A78BFA)',
+                    color: '#0F172A', borderRadius: 99,
+                    padding: '.25rem 1rem', fontSize: '.72rem', fontWeight: 800, letterSpacing: 1.5,
+                  }}>BPS 2018–2025</span>
+                }
+              />
+
+              <div className="card" style={{ padding: '2rem 2.5rem', overflow: 'hidden' }}>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '1.15rem', fontWeight: 800, color: '#E2E8F0', marginBottom: '.35rem' }}>
+                    Tren Tingkat Pengangguran Terbuka (TPT) Berdasarkan Fase
+                  </h3>
+                  <p style={{ fontSize: '.83rem', color: '#475569', fontStyle: 'italic' }}>
+                    Data ditampilkan dalam persentase (%) berdasarkan laporan berkala BPS (Februari &amp; Agustus).
+                    Grid bantu mengikuti standar diagram akademis statistika.
+                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
 
-        {/* ─── 3. VISUALISASI UTAMA ─── */}
-        <section id="visualisasi">
-          <div className="section-header" style={{ justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
-              <BarChart3 style={{ color: '#F97316', width: 32, height: 32 }} />
-              <h2 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1.6rem' }}>Visualisasi Data TPT Terintegrasi</h2>
-            </div>
-            <span style={{
-              background: '#F97316', color: '#fff', borderRadius: 99,
-              padding: '.25rem 1rem', fontSize: '.75rem', fontWeight: 700, letterSpacing: 1,
-            }}>BPS 2018–2025</span>
-          </div>
+                {/* Vertical scroller removed from UI logic, but chartScrollRef is preserved for sideways gesture swipe */}
+                <div id="chart-scroll-container" ref={chartScrollRef} style={{ overflowX: 'auto', paddingBottom: '1rem', scrollBehavior: 'auto' }}>
+                  <svg style={{ width: 0, height: 0, position: 'absolute' }} aria-hidden="true">
+                    <defs>
+                      {provinceColors.slice(0, 6).map(p => (
+                        <linearGradient key={p.name} id={`barGrad-${p.name.replace(/\s/g,'')}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%"   stopColor={p.color} stopOpacity={1}   />
+                          <stop offset="100%" stopColor={p.color} stopOpacity={0.6} />
+                        </linearGradient>
+                      ))}
+                    </defs>
+                  </svg>
 
-          <div className="card" style={{ padding: '2.5rem', overflow: 'hidden' }}>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '.35rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Tren Tingkat Pengangguran Terbuka (TPT) Berdasarkan Fase
-              </h3>
-              <p style={{ fontSize: '.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                Data ditampilkan dalam persentase (%) berdasarkan laporan berkala BPS (Februari &amp; Agustus).
-              </p>
-            </div>
+                  <div style={{ minWidth: 2200, height: 650, position: 'relative' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={data} margin={{ top: 50, right: 30, bottom: 80, left: 10 }} barCategoryGap="30%" barGap={2}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1E3A5F" vertical={true} horizontal={true} />
+                        <XAxis dataKey="label" tick={{ fill: '#475569', fontWeight: 700, fontSize: 12, fontFamily: 'Outfit,sans-serif' }} axisLine={{ stroke: '#1E3A5F' }} tickLine={{ stroke: '#1E3A5F' }} dy={10} />
+                        <YAxis domain={[0, 13]} tick={{ fill: '#475569', fontWeight: 600, fontSize: 11 }} axisLine={{ stroke: '#1E3A5F' }} tickLine={{ stroke: '#1E3A5F' }} tickFormatter={v => `${v}%`} width={42} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Legend verticalAlign="bottom" height={36} wrapperStyle={{ paddingTop: 120, fontWeight: 700, fontSize: 12, color: '#64748B', fontFamily: 'Outfit,sans-serif' }} />
+                        {provinceColors.slice(0, 6).map((p) => (
+                          <Bar key={p.name} dataKey={p.name} fill={`url(#barGrad-${p.name.replace(/\s/g,'')})`} barSize={14} radius={[4, 4, 0, 0]}>
+                            <LabelList dataKey={p.name} position="top" style={{ fontSize: 9, fill: p.color, fontWeight: 700 }} formatter={(val) => val.toFixed(2).replace('.', ',')} />
+                          </Bar>
+                        ))}
+                        <Line type="monotone" dataKey="Rata-rata" stroke="#E2E8F0" strokeWidth={3.5} strokeDasharray="0"
+                          dot={{ r: 6, fill: '#0F172A', strokeWidth: 2.5, stroke: '#E2E8F0' }}
+                          activeDot={{ r: 8, fill: '#E2E8F0', stroke: '#0F172A', strokeWidth: 2 }}>
+                          <LabelList dataKey="Rata-rata" position="top" offset={14} style={{ fontSize: 14, fill: '#E2E8F0', fontWeight: 800 }} formatter={(val) => val.toFixed(2).replace('.', ',')} />
+                        </Line>
+                      </ComposedChart>
+                    </ResponsiveContainer>
 
-            {/* Scrollable chart container */}
-            <div id="chart-scroll-container" ref={chartScrollRef} style={{ overflowX: 'auto', paddingBottom: '1rem', scrollBehavior: 'auto' }}>
-              <div style={{ minWidth: 2200, height: 650, position: 'relative' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={data} margin={{ top: 50, right: 30, bottom: 80, left: 10 }} barCategoryGap="30%" barGap={2}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                    <XAxis dataKey="label" tick={{ fill: '#64748B', fontWeight: 700, fontSize: 13 }} axisLine={{ stroke: '#CBD5E1' }} dy={10} />
-                    <YAxis hide domain={[0, 13]} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{ paddingTop: 120, fontWeight: 700 }} />
-
-                    {provinceColors.slice(0, 6).map((p) => (
-                      <Bar key={p.name} dataKey={p.name} fill={p.color} barSize={15} radius={[4, 4, 0, 0]}>
-                        <LabelList dataKey={p.name} position="top" style={{ fontSize: 9, fill: p.color, fontWeight: 700 }} formatter={(val) => val.toFixed(2).replace('.', ',')} />
-                      </Bar>
-                    ))}
-
-                    <Line type="monotone" dataKey="Rata-rata" stroke={provinceColors[6].color} strokeWidth={4}
-                      dot={{ r: 7, fill: '#fff', strokeWidth: 3, stroke: provinceColors[6].color }}>
-                      <LabelList dataKey="Rata-rata" position="top" offset={15} style={{ fontSize: 15, fill: provinceColors[6].color, fontWeight: 800 }} formatter={(val) => val.toFixed(2).replace('.', ',')} />
-                    </Line>
-                  </ComposedChart>
-                </ResponsiveContainer>
-
-                {/* Phase labels */}
-                <div style={{
-                  position: 'absolute', left: 30, bottom: 150,
-                  width: 'calc(100% - 60px)', height: 38,
-                  display: 'flex', fontWeight: 800, fontSize: 11, color: '#fff',
-                  borderRadius: 99, overflow: 'hidden',
-                  boxShadow: '0 4px 12px rgba(15, 23, 42, 0.1)',
-                  border: '1px solid var(--border-light)'
-                }}>
-                  <div style={{ flex: `0 0 ${(5 / 16) * 100}%`, background: 'linear-gradient(90deg, #2563EB, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1 }}>
-                    ◀ FASE 1: SEBELUM PANDEMI ▶
-                  </div>
-                  <div style={{ flex: `0 0 ${(4 / 16) * 100}%`, background: 'linear-gradient(90deg, #DC2626, #EF4444)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1, borderLeft: '2px solid #fff', borderRight: '2px solid #fff' }}>
-                    FASE 2: SAAT PANDEMI (COVID-19)
-                  </div>
-                  <div style={{ flex: `0 0 ${(7 / 16) * 100}%`, background: 'linear-gradient(90deg, #059669, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1 }}>
-                    FASE 3: SETELAH PANDEMI (PEMULIHAN) ▶
+                    {/* Phase labels */}
+                    <div style={{
+                      position: 'absolute', left: 42, bottom: 152,
+                      width: 'calc(100% - 72px)', height: 36,
+                      display: 'flex', fontWeight: 800, fontSize: 10.5, color: '#0F172A',
+                      borderRadius: 99, overflow: 'hidden',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                      border: '0.5px solid rgba(255,255,255,0.08)',
+                    }}>
+                      <div style={{ flex: `0 0 ${(5/16)*100}%`, background: 'linear-gradient(90deg, #2563EB, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1 }}>
+                        ◀ FASE 1: SEBELUM PANDEMI ▶
+                      </div>
+                      <div style={{ flex: `0 0 ${(4/16)*100}%`, background: 'linear-gradient(90deg, #DC2626, #EF4444)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1, borderLeft: '1.5px solid rgba(255,255,255,0.2)', borderRight: '1.5px solid rgba(255,255,255,0.2)' }}>
+                        FASE 2: SAAT PANDEMI (COVID-19)
+                      </div>
+                      <div style={{ flex: `0 0 ${(7/16)*100}%`, background: 'linear-gradient(90deg, #059669, #10B981)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1 }}>
+                        FASE 3: SETELAH PANDEMI (PEMULIHAN) ▶
+                      </div>
+                    </div>
                   </div>
                 </div>
+                <p style={{ textAlign: 'center', color: '#334155', fontSize: '.78rem', marginTop: '.5rem', animation: 'float 2s ease-in-out infinite' }}>
+                  ← Geser grafik ke samping untuk melihat timeline lengkap →
+                </p>
               </div>
-            </div>
+            </motion.main>
+          )}
 
-            <p style={{ textAlign: 'center', color: '#CBD5E1', fontSize: '.8rem', marginTop: '.5rem', animation: 'float 2s ease-in-out infinite' }}>
-              ← Geser grafik ke samping untuk melihat timeline lengkap →
-            </p>
-          </div>
-        </section>
+          {/* ────────────────── TREN DAERAH ────────────────── */}
+          {activeNav === 'tren' && (
+            <motion.main
+              key="tren"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ padding: '8rem 2rem 5rem', maxWidth: 1280, margin: '0 auto', width: '100%' }}
+            >
+              <SectionHeader icon={<TrendingUp style={{ color: '#22D3EE', width: 32, height: 32 }} />} title="Tren Pertumbuhan Per Daerah" />
 
-        {/* ─── 4. TREN PER DAERAH ─── */}
-        <section id="tren">
-          <div className="section-header">
-            <TrendingUp style={{ color: '#F97316', width: 32, height: 32 }} />
-            <h2 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1.6rem' }}>Tren Pertumbuhan Per Daerah</h2>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-            {provinceColors.map((p) => (
-              <ProvinceCard key={p.name} p={p} />
-            ))}
-          </div>
-        </section>
-
-        {/* ─── 5. METODOLOGI ─── */}
-        <section id="metodologi" style={{
-          background: 'linear-gradient(135deg,#0F172A 0%,#1E293B 100%)',
-          borderRadius: 24, padding: '3rem', color: '#fff',
-          boxShadow: '0 24px 60px rgba(15,23,42,0.3)',
-          position: 'relative', overflow: 'hidden',
-        }}>
-          {/* ambient blobs */}
-          <div style={{ position: 'absolute', top: 0, right: 0, width: 300, height: 300, borderRadius: '50%', background: 'rgba(249,115,22,0.08)', filter: 'blur(60px)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', bottom: 0, left: 0, width: 250, height: 250, borderRadius: '50%', background: 'rgba(168,85,247,0.06)', filter: 'blur(60px)', pointerEvents: 'none' }} />
-
-          <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', gap: '2.5rem' }}>
-            <div style={{ flex: '1 1 280px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginBottom: '1rem' }}>
-                <Info style={{ color: '#F97316', width: 22, height: 22 }} />
-                <h3 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1.1rem', textTransform: 'uppercase', letterSpacing: 1.5 }}>
-                  Metodologi &amp; Sumber
-                </h3>
-              </div>
-              <p style={{ color: '#94A3B8', lineHeight: 1.8, fontSize: '.9rem' }}>
-                Data dikompilasi dari laporan <strong style={{ color: '#E2E8F0' }}>Berita Resmi Statistik (BRS)</strong> Badan Pusat Statistik. Periode pengamatan mencakup transisi kebijakan PSBB ke PPKM hingga masa normalisasi ekonomi 2025. Analisis ini ditujukan untuk memberikan gambaran komprehensif bagi pemangku kebijakan ketenagakerjaan.
-              </p>
-            </div>
-
-            <div style={{ flex: '1 1 280px', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '2.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginBottom: '1rem' }}>
-                <Award style={{ color: '#F97316', width: 22, height: 22 }} />
-                <h3 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1.1rem', textTransform: 'uppercase', letterSpacing: 1.5 }}>
-                  Komitmen Data
-                </h3>
-              </div>
-              <p style={{ color: '#94A3B8', fontSize: '.9rem', lineHeight: 1.8, fontStyle: 'italic' }}>
-                "Seluruh angka yang disajikan telah diverifikasi silang dengan tabel statis BPS guna menjamin objektivitas hasil analisis dalam proposal ini."
-              </p>
-
-              <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <p style={{ fontSize: '.65rem', color: '#475569', textTransform: 'uppercase', letterSpacing: 1.5 }}>Tahun Terbit</p>
-                  <p style={{ fontWeight: 800, fontFamily: 'Outfit,sans-serif', fontSize: '1.1rem' }}>2026</p>
-                </div>
-                <div style={{
-                  background: 'linear-gradient(135deg,#F97316,#FBBF24)',
-                  padding: '.5rem 1.25rem', borderRadius: 99,
-                  fontWeight: 800, fontSize: '.75rem', letterSpacing: 1.5,
-                  animation: 'pulseGlow 2.5s ease-in-out infinite',
-                }}>
-                  OFFICIAL PROPOSAL
+              <div className="bento-grid">
+                {provinceColors.slice(0, 6).map((p, i) => (
+                  <div key={p.name} className={bentoClass(i)}>
+                    <ProvinceCard p={p} index={i} />
+                  </div>
+                ))}
+                <div className="bento-wide">
+                  <ProvinceCard p={provinceColors[6]} index={6} />
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
+            </motion.main>
+          )}
 
-      </main>
+          {/* ────────────────── METODOLOGI ────────────────── */}
+          {activeNav === 'metodologi' && (
+            <motion.main
+              key="metodologi"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              style={{ padding: '8rem 2rem 5rem', maxWidth: 1000, margin: '0 auto', width: '100%' }}
+            >
+              <SectionHeader icon={<Info style={{ color: '#22D3EE', width: 32, height: 32 }} />} title="Informasi & Metodologi" />
 
-      {/* ── GESTURE SCROLL ─── */}
+              <div style={{
+                background: 'rgba(13,27,46,0.7)',
+                backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+                borderRadius: 24, padding: '3rem',
+                border: '0.5px solid rgba(255,255,255,0.07)',
+                boxShadow: '0 32px 64px rgba(0,0,0,0.4)',
+                position: 'relative', overflow: 'hidden',
+              }}>
+                {/* ambient blobs */}
+                <div style={{ position: 'absolute', top: 0, right: 0, width: 320, height: 320, borderRadius: '50%', background: 'rgba(34,211,238,0.05)', filter: 'blur(60px)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, width: 260, height: 260, borderRadius: '50%', background: 'rgba(167,139,250,0.05)', filter: 'blur(60px)', pointerEvents: 'none' }} />
+
+                <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', gap: '2.5rem' }}>
+                  <div style={{ flex: '1 1 280px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginBottom: '1rem' }}>
+                      <Info style={{ color: '#22D3EE', width: 22, height: 22 }} />
+                      <h3 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1.05rem', textTransform: 'uppercase', letterSpacing: 1.5, color: '#E2E8F0' }}>
+                        Metodologi &amp; Sumber
+                      </h3>
+                    </div>
+                    <p style={{ color: '#64748B', lineHeight: 1.8, fontSize: '.9rem' }}>
+                      Data dikompilasi dari laporan <strong style={{ color: '#94A3B8' }}>Berita Resmi Statistik (BRS)</strong> Badan Pusat Statistik. Periode pengamatan mencakup transisi kebijakan PSBB ke PPKM hingga masa normalisasi ekonomi 2025. Analisis ini ditujukan untuk memberikan gambaran komprehensif bagi pemangku kebijakan ketenagakerjaan.
+                    </p>
+                  </div>
+
+                  <div style={{ flex: '1 1 280px', borderLeft: '0.5px solid rgba(255,255,255,0.07)', paddingLeft: '2.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginBottom: '1rem' }}>
+                      <Award style={{ color: '#A78BFA', width: 22, height: 22 }} />
+                      <h3 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1.05rem', textTransform: 'uppercase', letterSpacing: 1.5, color: '#E2E8F0' }}>
+                        Komitmen Data
+                      </h3>
+                    </div>
+                    <p style={{ color: '#64748B', fontSize: '.9rem', lineHeight: 1.8, fontStyle: 'italic' }}>
+                      "Seluruh angka yang disajikan telah diverifikasi silang dengan tabel statis BPS guna menjamin objektivitas hasil analisis dalam proposal ini."
+                    </p>
+
+                    <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <p style={{ fontSize: '.62rem', color: '#334155', textTransform: 'uppercase', letterSpacing: 2 }}>tahun terbit</p>
+                        <p style={{ fontWeight: 900, fontFamily: 'Outfit,sans-serif', fontSize: '1.2rem', color: '#E2E8F0' }}>2026</p>
+                      </div>
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        style={{
+                          background: 'linear-gradient(135deg, #22D3EE, #A78BFA)',
+                          padding: '.45rem 1.25rem', borderRadius: 99,
+                          fontWeight: 800, fontSize: '.72rem', letterSpacing: 1.8, color: '#0F172A',
+                          animation: 'pulseGlow 2.5s ease-in-out infinite', cursor: 'default',
+                        }}
+                      >
+                        OFFICIAL PROPOSAL
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.main>
+          )}
+
+        </AnimatePresence>
+      </div>
+
+      {/* ── GESTURE SCROLL — Receives ref for horz scrolling charts. Vertical will scroll if content is long ── */}
       <GestureScroll chartScrollRef={chartScrollRef} />
 
-      {/* ── FOOTER ─── */}
+      {/* ── FOOTER ── */}
       <footer style={{
-        borderTop: '1px solid #E2E8F0',
-        padding: '2.5rem',
-        textAlign: 'center',
-        background: '#fff',
+        marginTop: 'auto', // pushes footer to bottom
+        borderTop: '0.5px solid rgba(255,255,255,0.06)',
+        padding: '2.5rem', textAlign: 'center',
+        background: 'rgba(9,18,38,0.8)', backdropFilter: 'blur(16px)',
       }}>
-        <p style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 700, fontSize: '1rem', color: '#0F172A', marginBottom: '.35rem' }}>
+        <p style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 700, fontSize: '.95rem', color: '#E2E8F0', marginBottom: '.35rem' }}>
           Kelompok 8 &mdash; Analisis TPT Jawa
         </p>
-        <p style={{ color: '#94A3B8', fontSize: '.8rem' }}>
+        <p style={{ color: '#334155', fontSize: '.78rem' }}>
           &copy; 2026 Kelompok 8 &mdash; Dibuat untuk pemenuhan tugas akademik.
         </p>
       </footer>
