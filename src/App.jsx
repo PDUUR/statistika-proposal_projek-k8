@@ -378,6 +378,7 @@ const statChips = [
    ───────────────────────────────────────────────────────────── */
 const App = () => {
   const [activeNav, setActiveNav] = useState('beranda');
+  const [isNavHovered, setIsNavHovered] = useState(false);
   const chartScrollRef = useRef(null);
 
   /* ── Parallax background ── */
@@ -407,8 +408,33 @@ const App = () => {
   return (
     <div style={{ background: '#0F172A', minHeight: '100vh', fontFamily: 'Outfit, sans-serif', color: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── FLOATING PILL NAV ── */}
-      <nav className="pill-nav" aria-label="Navigasi utama">
+      {/* ── HOVER ZONE TRIGGER (Area transparan untuk pemicu menu) ── */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '40px',
+          zIndex: 199,
+          background: 'transparent'
+        }}
+        onMouseEnter={() => setIsNavHovered(true)}
+      />
+
+      {/* ── FLOATING PILL NAV (Auto-Hide) ── */}
+      <motion.nav
+        className="pill-nav"
+        aria-label="Navigasi utama"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{
+          opacity: isNavHovered ? 1 : 0,
+          y: isNavHovered ? 0 : -20
+        }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+        onMouseEnter={() => setIsNavHovered(true)}
+        onMouseLeave={() => setIsNavHovered(false)}
+      >
         <span className="pill-nav__logo">K<span style={{ color: '#A78BFA' }}>8</span></span>
         {navItems.map(n => (
           <motion.button
@@ -435,14 +461,14 @@ const App = () => {
             <span style={{
               position: 'relative', zIndex: 1,
               color: activeNav === n.id ? '#0F172A' : 'rgba(255,255,255,0.85)',
-              fontWeight: activeNav === n.id ? 800 : 600,
+              fontWeight: activeNav === n.id ? 800 : 700,
               transition: 'color 0.2s', fontSize: '.82rem', fontFamily: 'Outfit, sans-serif',
             }}>
               {n.label}
             </span>
           </motion.button>
         ))}
-      </nav>
+      </motion.nav>
 
       {/* ── MAIN CONTENT — AnimatePresence mode='wait' ── */}
       <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' }}>
