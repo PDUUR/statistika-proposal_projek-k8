@@ -31,7 +31,7 @@
   --bg-card-solid: #111827;
 
   /* Text */
-  --text-main:     #E2E8F0;
+  --text-main:     #FFFFFF;
   --text-muted:    #94A3B8;
   --text-faint:    #475569;
 
@@ -97,8 +97,8 @@ body {
 }
 
 @keyframes scrollBounce {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  50%       { transform: translateX(-50%) translateY(8px); }
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(8px); }
 }
 
 @keyframes meshMove {
@@ -117,6 +117,12 @@ body {
 .fade-up-d1 { animation-delay: .1s; }
 .fade-up-d2 { animation-delay: .2s; }
 .fade-up-d3 { animation-delay: .3s; }
+
+/* ── High-visibility text glow ─── */
+.text-glow {
+  color: #FFFFFF;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
 
 /* ── Layout ─── */
 .container {
@@ -146,7 +152,8 @@ body {
   font-family: 'Outfit', sans-serif;
   font-size: 1.6rem;
   font-weight: 800;
-  color: var(--text-main);
+  color: #FFFFFF;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 /* ── Glassmorphism Card ─── */
