@@ -164,7 +164,7 @@ const childVariants = {
 /* ── Card hover ── */
 const cardHover = (color) => ({
   scale: 1.02,
-  boxShadow: `0 16px 48px rgba(0,0,0,0.6), 0 0 32px ${color}40`,
+  boxShadow: `0 16px 48px rgba(255,255,255,0.2), 0 0 32px ${color}40`,
   borderColor: `${color}44`,
   transition: { duration: 0.2, ease: EASE_QUARTIC },
 });
@@ -230,7 +230,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       background: 'rgba(13,27,46,0.92)',
       border: '0.5px solid rgba(34,211,238,0.25)',
       borderRadius: 16, padding: '14px 18px',
-      boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(34,211,238,0.1)',
+      boxShadow: '0 12px 40px rgba(255,255,255,0.2), 0 0 20px rgba(34,211,238,0.1)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       minWidth: 210,
     }}>
@@ -240,7 +240,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       {payload.map((entry) => (
         <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color, flexShrink: 0, boxShadow: `0 0 6px ${entry.color}` }} />
-          <span style={{ color: '#94A3B8', fontSize: 12, flex: 1 }}>{entry.name}</span>
+          <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, flex: 1 }}>{entry.name}</span>
           <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 13, textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
             {Number(entry.value).toFixed(2).replace('.', ',')}%
           </span>
@@ -284,12 +284,12 @@ const ProvinceCard = ({ p, index }) => {
       </motion.div>
 
       <motion.div variants={childVariants} custom={1} style={{ display: 'flex', gap: '.65rem' }}>
-        <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '.55rem .7rem', textAlign: 'center', border: '0.5px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ fontSize: 9, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2 }}>puncak</div>
+        <div style={{ flex: 1, background: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: '.55rem .7rem', textAlign: 'center', border: '0.5px solid rgba(255,255,255,0.2)' }}>
+          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.85)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2 }}>puncak</div>
           <div style={{ fontSize: 17, fontWeight: 900, color: '#F87171', fontFamily: 'Outfit,sans-serif' }}>{String(peak).replace('.', ',')}%</div>
         </div>
-        <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '.55rem .7rem', textAlign: 'center', border: '0.5px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ fontSize: 9, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2 }}>th 2025</div>
+        <div style={{ flex: 1, background: 'rgba(255,255,255,0.2)', borderRadius: 12, padding: '.55rem .7rem', textAlign: 'center', border: '0.5px solid rgba(255,255,255,0.2)' }}>
+          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.85)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2 }}>th 2025</div>
           <div style={{ fontSize: 17, fontWeight: 900, color: p.color, fontFamily: 'Outfit,sans-serif' }}>{String(latest).replace('.', ',')}%</div>
         </div>
       </motion.div>
@@ -303,8 +303,8 @@ const ProvinceCard = ({ p, index }) => {
                 <stop offset="95%" stopColor={p.color} stopOpacity={0}    />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.3)" vertical={true} horizontal={true} />
-            <XAxis dataKey="label" fontSize={8} interval={3} tick={{ fill: '#475569' }} axisLine={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" vertical={true} horizontal={true} />
+            <XAxis dataKey="label" fontSize={8} interval={3} tick={{ fill: 'rgba(255,255,255,0.85)' }} axisLine={false} tickLine={false} />
             <YAxis domain={[0, 13]} hide />
             <Tooltip content={<CustomTooltip />} />
             <Area type="monotone" dataKey={p.name} stroke={p.color} fill={`url(#sparkGrad-${p.name.replace(/\s/g, '')})`} strokeWidth={2.5}
@@ -434,7 +434,7 @@ const App = () => {
             )}
             <span style={{
               position: 'relative', zIndex: 1,
-              color: activeNav === n.id ? '#0F172A' : '#64748B',
+              color: activeNav === n.id ? '#0F172A' : 'rgba(255,255,255,0.85)',
               fontWeight: activeNav === n.id ? 800 : 600,
               transition: 'color 0.2s', fontSize: '.82rem', fontFamily: 'Outfit, sans-serif',
             }}>
@@ -479,7 +479,7 @@ const App = () => {
               {/* Dot grid */}
               <div style={{
                 position: 'absolute', inset: 0, zIndex: 1,
-                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)',
+                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.2) 1px, transparent 1px)',
                 backgroundSize: '32px 32px', pointerEvents: 'none',
               }} />
 
@@ -519,7 +519,7 @@ const App = () => {
                       fontSize: 'clamp(2.1rem, 6vw, 3.8rem)',
                       fontWeight: 900, lineHeight: 1.1,
                       letterSpacing: '-0.5px',
-                      color: '#FFFFFF', textShadow: '0 0 12px rgba(255,255,255,0.25)',
+                      color: '#FFFFFF', textShadow: '0 0 12px rgba(255,255,255,0.2)',
                       marginBottom: '.2rem',
                     }}
                   >
@@ -635,10 +635,10 @@ const App = () => {
                   style={{
                     marginTop: '4rem',
                     display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                    cursor: 'pointer', color: '#334155', animation: 'scrollBounce 1.8s ease-in-out infinite',
+                    cursor: 'pointer', color: 'rgba(255,255,255,0.85)', animation: 'scrollBounce 1.8s ease-in-out infinite',
                   }}
                   onClick={() => navigateTo('tim')}
-                  whileHover={{ color: '#64748B', transition: { duration: 0.2 } }}
+                  whileHover={{ color: 'rgba(255,255,255,0.85)', transition: { duration: 0.2 } }}
                 >
                   <span style={{ fontSize: '.65rem', fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase' }}>lanjutkan</span>
                   <ChevronDown size={18} />
@@ -664,8 +664,8 @@ const App = () => {
                 <div style={{
                   display: 'grid', gridTemplateColumns: '60px 1fr 1fr',
                   background: 'linear-gradient(90deg, rgba(34,211,238,0.12), rgba(167,139,250,0.08))',
-                  borderBottom: '0.5px solid rgba(255,255,255,0.08)',
-                  color: '#64748B', padding: '1rem 1.5rem',
+                  borderBottom: '0.5px solid rgba(255,255,255,0.2)',
+                  color: 'rgba(255,255,255,0.85)', padding: '1rem 1.5rem',
                   fontWeight: 700, fontSize: '.75rem', textTransform: 'uppercase', letterSpacing: 1.8,
                 }}>
                   <span style={{ textAlign: 'center' }}>No.</span>
@@ -701,12 +701,12 @@ const App = () => {
                       style={{
                         display: 'grid', gridTemplateColumns: '60px 1fr 1fr',
                         padding: '1rem 1.5rem', alignItems: 'center',
-                        borderBottom: index < lastIndex ? '0.5px solid rgba(255,255,255,0.05)' : 'none',
-                        background: index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
+                        borderBottom: index < lastIndex ? '0.5px solid rgba(255,255,255,0.2)' : 'none',
+                        background: index % 2 === 0 ? 'rgba(255,255,255,0.2)' : 'transparent',
                       }}
                       whileHover={{ background: 'rgba(34,211,238,0.04)', x: 4, transition: { duration: 0.2 } }}
                     >
-                      <span style={{ textAlign: 'center', fontWeight: 700, color: '#334155', fontFamily: 'monospace', fontSize: '1rem' }}>
+                      <span style={{ textAlign: 'center', fontWeight: 700, color: 'rgba(255,255,255,0.85)', fontFamily: 'monospace', fontSize: '1rem' }}>
                         {String(index + 1).padStart(2, '0')}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
@@ -719,7 +719,7 @@ const App = () => {
                         }}>
                           {member.nama.charAt(0)}
                         </div>
-                        <span style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '.9rem', textShadow: '0 0 10px rgba(255,255,255,0.15)' }}>
+                        <span style={{ fontWeight: 700, color: '#FFFFFF', fontSize: '.9rem', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
                           {member.nama}
                         </span>
                       </div>
@@ -773,7 +773,7 @@ const App = () => {
                   <h3 style={{ fontFamily: 'Outfit,sans-serif', fontSize: '1.15rem', fontWeight: 800, color: '#FFFFFF', marginBottom: '.35rem', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
                     Tren Tingkat Pengangguran Terbuka (TPT) Berdasarkan Fase
                   </h3>
-                  <p style={{ fontSize: '.83rem', color: '#475569', fontStyle: 'italic' }}>
+                  <p style={{ fontSize: '.83rem', color: 'rgba(255,255,255,0.85)', fontStyle: 'italic' }}>
                     Data ditampilkan dalam persentase (%) berdasarkan laporan berkala BPS (Februari &amp; Agustus).
                     Grid bantu mengikuti standar diagram akademis statistika.
                   </p>
@@ -794,9 +794,9 @@ const App = () => {
                   <div style={{ minWidth: 2200, height: 650, position: 'relative' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={data} margin={{ top: 50, right: 30, bottom: 80, left: 10 }} barCategoryGap="30%" barGap={2}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.3)" vertical={true} horizontal={true} />
-                        <XAxis dataKey="label" tick={{ fill: '#FFFFFF', fontWeight: 700, fontSize: 12, fontFamily: 'Outfit,sans-serif' }} axisLine={{ stroke: 'rgba(255,255,255,0.3)' }} tickLine={{ stroke: 'rgba(255,255,255,0.3)' }} dy={10} />
-                        <YAxis domain={[0, 13]} tick={{ fill: '#FFFFFF', fontWeight: 600, fontSize: 11 }} axisLine={{ stroke: 'rgba(255,255,255,0.3)' }} tickLine={{ stroke: 'rgba(255,255,255,0.3)' }} tickFormatter={v => `${v}%`} width={42} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.2)" vertical={true} horizontal={true} />
+                        <XAxis dataKey="label" tick={{ fill: '#FFFFFF', fontWeight: 700, fontSize: 12, fontFamily: 'Outfit,sans-serif' }} axisLine={{ stroke: 'rgba(255,255,255,0.2)' }} tickLine={{ stroke: 'rgba(255,255,255,0.2)' }} dy={10} />
+                        <YAxis domain={[0, 13]} tick={{ fill: '#FFFFFF', fontWeight: 700, fontSize: 11 }} axisLine={{ stroke: 'rgba(255,255,255,0.2)' }} tickLine={{ stroke: 'rgba(255,255,255,0.2)' }} tickFormatter={v => `${v}%`} width={42} />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend verticalAlign="bottom" height={36} wrapperStyle={{ paddingTop: 120, fontWeight: 700, fontSize: 12, color: '#FFFFFF', fontFamily: 'Outfit,sans-serif' }} />
                         {provinceColors.slice(0, 6).map((p) => (
@@ -818,7 +818,7 @@ const App = () => {
                       display: 'flex', fontWeight: 800, fontSize: 10.5, color: '#FFFFFF',
                       borderRadius: 99, overflow: 'hidden',
                       boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                      border: '0.5px solid rgba(255,255,255,0.08)',
+                      border: '0.5px solid rgba(255,255,255,0.2)',
                     }}>
                       <div style={{ flex: `0 0 ${(5/16)*100}%`, background: 'linear-gradient(90deg, #2563EB, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, letterSpacing: 1 }}>
                         ◀ FASE 1: SEBELUM PANDEMI ▶
@@ -832,7 +832,7 @@ const App = () => {
                     </div>
                   </div>
                 </div>
-                <p style={{ textAlign: 'center', color: '#334155', fontSize: '.78rem', marginTop: '.5rem', animation: 'float 2s ease-in-out infinite' }}>
+                <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.85)', fontSize: '.78rem', marginTop: '.5rem', animation: 'float 2s ease-in-out infinite' }}>
                   ← Geser grafik ke samping untuk melihat timeline lengkap →
                 </p>
               </motion.div>
@@ -880,7 +880,7 @@ const App = () => {
                   background: 'rgba(13,27,46,0.7)',
                   backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
                   borderRadius: 24, padding: '3rem',
-                  border: '0.5px solid rgba(255,255,255,0.07)',
+                  border: '0.5px solid rgba(255,255,255,0.2)',
                   boxShadow: '0 32px 64px rgba(0,0,0,0.4)',
                   position: 'relative', overflow: 'hidden',
                 }}
@@ -899,25 +899,25 @@ const App = () => {
                         Metodologi &amp; Sumber
                       </h3>
                     </div>
-                    <p style={{ color: '#94A3B8', lineHeight: 1.8, fontSize: '.9rem' }}>
+                    <p style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.8, fontSize: '.9rem' }}>
                       Data dikompilasi dari laporan <strong style={{ color: '#FFFFFF' }}>Berita Resmi Statistik (BRS)</strong> Badan Pusat Statistik. Periode pengamatan mencakup transisi kebijakan PSBB ke PPKM hingga masa normalisasi ekonomi 2025.
                     </p>
                   </div>
 
-                  <div style={{ flex: '1 1 280px', borderLeft: '0.5px solid rgba(255,255,255,0.07)', paddingLeft: '2.5rem' }}>
+                  <div style={{ flex: '1 1 280px', borderLeft: '0.5px solid rgba(255,255,255,0.2)', paddingLeft: '2.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginBottom: '1rem' }}>
                       <Award style={{ color: '#A78BFA', width: 22, height: 22 }} />
                       <h3 style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1.05rem', textTransform: 'uppercase', letterSpacing: 1.5, color: '#FFFFFF', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
                         Komitmen Data
                       </h3>
                     </div>
-                    <p style={{ color: '#94A3B8', fontSize: '.9rem', lineHeight: 1.8, fontStyle: 'italic' }}>
+                    <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '.9rem', lineHeight: 1.8, fontStyle: 'italic' }}>
                       "Seluruh angka yang disajikan telah diverifikasi silang dengan tabel statis BPS guna menjamin objektivitas hasil analisis dalam proposal ini."
                     </p>
 
-                    <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '0.5px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
-                        <p style={{ fontSize: '.62rem', color: '#334155', textTransform: 'uppercase', letterSpacing: 2 }}>tahun terbit</p>
+                        <p style={{ fontSize: '.62rem', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 2 }}>tahun terbit</p>
                         <p style={{ fontWeight: 900, fontFamily: 'Outfit,sans-serif', fontSize: '1.2rem', color: '#FFFFFF', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>2026</p>
                       </div>
                       <motion.div
@@ -949,14 +949,14 @@ const App = () => {
       {/* ── FOOTER ── */}
       <footer style={{
         marginTop: 'auto',
-        borderTop: '0.5px solid rgba(255,255,255,0.06)',
+        borderTop: '0.5px solid rgba(255,255,255,0.2)',
         padding: '2.5rem', textAlign: 'center',
         background: 'rgba(9,18,38,0.8)', backdropFilter: 'blur(16px)',
       }}>
         <p style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 700, fontSize: '.95rem', color: '#FFFFFF', marginBottom: '.35rem', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
           Kelompok 8 &mdash; Analisis TPT Jawa
         </p>
-        <p style={{ color: '#334155', fontSize: '.78rem' }}>
+        <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '.78rem' }}>
           &copy; 2026 Kelompok 8 &mdash; Dibuat untuk pemenuhan tugas akademik.
         </p>
       </footer>
