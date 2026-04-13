@@ -953,11 +953,8 @@ const App = () => {
         padding: '2.5rem', textAlign: 'center',
         background: 'rgba(9,18,38,0.8)', backdropFilter: 'blur(16px)',
       }}>
-        <p style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 700, fontSize: '.95rem', color: '#FFFFFF', marginBottom: '.35rem', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
-          Kelompok 8 &mdash; Analisis TPT Jawa
-        </p>
         <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '.78rem' }}>
-          &copy; 2026 Kelompok 8 &mdash; Dibuat untuk pemenuhan tugas akademik.
+          &copy; 2026 Kel 8 | ST19 | Dibuat untuk pemenuhan tugas akademik
         </p>
       </footer>
     </div>
