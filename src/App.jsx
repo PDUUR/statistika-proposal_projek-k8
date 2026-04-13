@@ -21,7 +21,7 @@ import {
   useScroll,
   useTransform,
 } from 'framer-motion';
-import { FaHome, FaUsers, FaChartBar, FaArrowTrendUp, FaBookOpen } from 'react-icons/fa6';
+import { FaHouse, FaUsers, FaChartBar, FaArrowTrendUp, FaBookOpen } from 'react-icons/fa6';
 import './App.css';
 
 /* ─────────────────────────────────────────────────────────────
@@ -387,7 +387,7 @@ const App = () => {
   const bgY = useTransform(scrollY, [0, 600], [0, 120]);
 
   const navItems = [
-    { id: 'beranda',     icon: <FaHome />         },
+    { id: 'beranda',     icon: <FaHouse />        },
     { id: 'tim',         icon: <FaUsers />        },
     { id: 'visualisasi', icon: <FaChartBar />     },
     { id: 'tren',        icon: <FaArrowTrendUp /> },
