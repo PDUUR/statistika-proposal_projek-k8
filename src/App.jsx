@@ -21,8 +21,6 @@ import {
   useScroll,
   useTransform,
 } from 'framer-motion';
-import Particles, { initParticlesEngine } from "@tsparticles/react";
-import { loadFull } from "tsparticles";
 import './App.css';
 
 /* ─────────────────────────────────────────────────────────────
@@ -382,26 +380,6 @@ const App = () => {
   const [activeNav, setActiveNav] = useState('beranda');
   const chartScrollRef = useRef(null);
 
-  /* ── Particles Init ── */
-  const [particlesInit, setParticlesInit] = useState(false);
-  useEffect(() => {
-    initParticlesEngine(async (engine) => {
-      await loadFull(engine);
-    }).then(() => {
-      setParticlesInit(true);
-    });
-  }, []);
-
-  /* ── Interactive Mouse Position (Beranda Parallax Glow) ── */
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMousePos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-  };
-
   /* ── Parallax background ── */
   const { scrollY } = useScroll();
   const bgY = useTransform(scrollY, [0, 600], [0, 120]);
@@ -478,66 +456,13 @@ const App = () => {
               initial="initial"
               animate="animate"
               exit="exit"
-              onMouseMove={handleMouseMove}
               style={{
                 position: 'relative', overflow: 'hidden',
                 flex: 1, display: 'flex', alignItems: 'center',
                 justifyContent: 'center', textAlign: 'center', padding: '8rem 2rem 6rem',
               }}
             >
-              {/* ── Spotlight Kursor Glow (from manual onMouseMove) ── */}
-              <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, pointerEvents: 'none',
-                background: `radial-gradient(circle 600px at ${mousePos.x}px ${mousePos.y}px, rgba(34,211,238,0.06), transparent 80%)`,
-                transition: 'background 0.1s ease-out'
-              }} />
 
-              {/* ── TSPARTICLES TRAIL ── */}
-              {particlesInit && (
-                <Particles
-                  id="tsparticles"
-                  style={{ position: 'absolute', inset: 0, zIndex: 1 }}
-                  options={{
-                    fullScreen: { enable: false },
-                    fpsLimit: 60,
-                    particles: {
-                      number: { value: 0 },
-                      color: { value: ["#22D3EE", "#F472B6", "#FBBF24", "#A78BFA"] },
-                      shape: { type: "circle" },
-                      opacity: {
-                        value: { min: 0.1, max: 0.7 },
-                        animation: { enable: true, speed: 2, sync: false },
-                      },
-                      size: {
-                        value: { min: 1, max: 4 },
-                        animation: { enable: true, speed: 3, sync: false },
-                      },
-                      life: {
-                        duration: { sync: false, value: 1.5 },
-                        count: 1,
-                      },
-                      move: {
-                        enable: true,
-                        speed: { min: 1, max: 2.5 },
-                        direction: "none",
-                        random: true,
-                        straight: false,
-                        outModes: { default: "destroy" },
-                      },
-                    },
-                    interactivity: {
-                      detectsOn: "window",
-                      events: {
-                        onHover: { enable: true, mode: "trail" },
-                      },
-                      modes: {
-                        trail: { delay: 0.02, quantity: 2, pauseOnStop: true },
-                      },
-                    },
-                    detectRetina: true,
-                  }}
-                />
-              )}
 
               {/* ── Parallax background (20% slower) ── */}
               <motion.div
