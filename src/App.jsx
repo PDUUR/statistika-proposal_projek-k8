@@ -21,6 +21,7 @@ import {
   useScroll,
   useTransform,
 } from 'framer-motion';
+import { FaHome, FaUsers, FaChartBar, FaArrowTrendUp, FaBookOpen } from 'react-icons/fa6';
 import './App.css';
 
 /* ─────────────────────────────────────────────────────────────
@@ -386,11 +387,11 @@ const App = () => {
   const bgY = useTransform(scrollY, [0, 600], [0, 120]);
 
   const navItems = [
-    { id: 'beranda',     label: 'Beranda'     },
-    { id: 'tim',         label: 'Tim'         },
-    { id: 'visualisasi', label: 'Visualisasi' },
-    { id: 'tren',        label: 'Tren Daerah' },
-    { id: 'metodologi',  label: 'Metodologi'  },
+    { id: 'beranda',     icon: <FaHome />         },
+    { id: 'tim',         icon: <FaUsers />        },
+    { id: 'visualisasi', icon: <FaChartBar />     },
+    { id: 'tren',        icon: <FaArrowTrendUp /> },
+    { id: 'metodologi',  icon: <FaBookOpen />     },
   ];
 
   const navigateTo = (id) => {
@@ -408,67 +409,73 @@ const App = () => {
   return (
     <div style={{ background: '#0F172A', minHeight: '100vh', fontFamily: 'Outfit, sans-serif', color: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── HOVER ZONE TRIGGER (Area transparan untuk pemicu menu) ── */}
-      <div
+      {/* ── VERTICAL SIDE NAV (Icon Only) ── */}
+      <nav
+        aria-label="Navigasi samping"
         style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '40px',
-          zIndex: 199,
-          background: 'transparent'
+          right: '1.5rem',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 200,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          padding: '1rem .75rem',
+          background: 'rgba(15, 23, 42, 0.45)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '0.5px solid rgba(255,255,255,0.15)',
+          borderRadius: 99,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         }}
-        onMouseEnter={() => setIsNavHovered(true)}
-      />
-
-      {/* ── FLOATING PILL NAV (Auto-Hide) ── */}
-      <motion.nav
-        className="pill-nav"
-        aria-label="Navigasi utama"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{
-          opacity: isNavHovered ? 1 : 0,
-          y: isNavHovered ? 0 : -20
-        }}
-        transition={{ duration: 0.4, ease: "easeInOut" }}
-        onMouseEnter={() => setIsNavHovered(true)}
-        onMouseLeave={() => setIsNavHovered(false)}
       >
-        <span className="pill-nav__logo">K<span style={{ color: '#A78BFA' }}>8</span></span>
-        {navItems.map(n => (
-          <motion.button
-            key={n.id}
-            id={`nav-${n.id}`}
-            className="pill-nav__btn"
-            onClick={() => navigateTo(n.id)}
-            style={{ position: 'relative' }}
-            whileHover={{ scale: 1.05, transition: SPRING_FAST }}
-            whileTap={{ scale: 0.95, transition: SPRING_FAST }}
-          >
-            {activeNav === n.id && (
-              <motion.span
-                layoutId="nav-active-pill"
-                style={{
-                  position: 'absolute', inset: 0,
-                  background: 'linear-gradient(135deg, #22D3EE, #A78BFA)',
-                  borderRadius: 99, zIndex: -1,
-                  boxShadow: '0 0 18px rgba(34,211,238,0.45)',
-                }}
-                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-              />
-            )}
-            <span style={{
-              position: 'relative', zIndex: 1,
-              color: activeNav === n.id ? '#0F172A' : 'rgba(255,255,255,0.85)',
-              fontWeight: activeNav === n.id ? 800 : 700,
-              transition: 'color 0.2s', fontSize: '.82rem', fontFamily: 'Outfit, sans-serif',
-            }}>
-              {n.label}
-            </span>
-          </motion.button>
-        ))}
-      </motion.nav>
+        {navItems.map(n => {
+          const isActive = activeNav === n.id;
+          return (
+            <motion.button
+              key={n.id}
+              id={`nav-${n.id}`}
+              onClick={() => navigateTo(n.id)}
+              style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '3rem',
+                height: '3rem',
+                borderRadius: '50%',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                color: isActive ? '#FFFFFF' : 'rgba(255,255,255,0.7)',
+                fontSize: '1.5em',
+                outline: 'none',
+              }}
+              whileHover={{ scale: 1.2, color: '#FFFFFF' }}
+              whileTap={{ scale: 0.9 }}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="nav-active-halo"
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: '50%',
+                    border: '1px solid rgba(34,211,238,0.8)',
+                    boxShadow: '0 0 15px rgba(34,211,238,0.4)',
+                    background: 'rgba(34,211,238,0.1)',
+                  }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                />
+              )}
+              <span style={{ position: 'relative', zIndex: 1, display: 'flex' }}>
+                {n.icon}
+              </span>
+            </motion.button>
+          );
+        })}
+      </nav>
 
       {/* ── MAIN CONTENT — AnimatePresence mode='wait' ── */}
       <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' }}>
