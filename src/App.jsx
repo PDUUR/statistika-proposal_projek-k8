@@ -24,7 +24,7 @@ import {
 import './App.css';
 
 /* ─────────────────────────────────────────────────────────────
-   DATA (tidak diubah)
+   DATA
    ───────────────────────────────────────────────────────────── */
 const data = [
   { label: "Feb '18", 'DKI Jakarta': 6.65, 'Jawa Barat': 8.23, 'Jawa Timur': 3.91, 'Jawa Tengah': 4.47, 'DI Yogyakarta': 3.37, 'Banten': 8.47, 'Rata-rata': 5.85 },
@@ -73,57 +73,91 @@ const peakAvg = Math.max(...data.map(d => d['Rata-rata']));
    ANIMATION CONSTANTS
    ───────────────────────────────────────────────────────────── */
 
-/* ── Physics spring — terasa organik & mewah ── */
+/* ── Physics spring — organik & mewah ── */
 const SPRING = { type: 'spring', damping: 20, stiffness: 100 };
 
-/* ── Fast spring untuk UI micro-interactions ── */
+/* ── Fast spring untuk micro-interactions ── */
 const SPRING_FAST = { type: 'spring', damping: 25, stiffness: 260 };
 
-/* ── Quartic Ease Out (untuk teks & elemen dekstop) ── */
+/* ── Quartic Ease Out ── */
 const EASE_QUARTIC = [0.22, 1, 0.36, 1];
 
-/* ── Global page transition:
-   Entry  : y=30 → 0, opacity 0→1, blur 0 (0.6s spring)
-   Exit   : y=-30, opacity→0, blur→10px (0.3s — lebih cepat)
-──────────────────────────────────────────────────────────────── */
+/* ── Global page transition ──
+   Entry  0.6s spring | Exit 0.3s fast (ritme navigasi) */
 const pageVariants = {
-  initial: {
-    opacity: 0,
-    y: 30,
-    filter: 'blur(8px)',
-  },
-  animate: {
-    opacity: 1,
-    y: 0,
-    filter: 'blur(0px)',
-    transition: { ...SPRING, duration: 0.6 },
-  },
-  exit: {
-    opacity: 0,
-    y: -30,
-    filter: 'blur(10px)',
-    transition: { duration: 0.3, ease: EASE_QUARTIC },
-  },
+  initial: { opacity: 0, y: 30,  filter: 'blur(8px)' },
+  animate: { opacity: 1, y: 0,   filter: 'blur(0px)', transition: { ...SPRING } },
+  exit:    { opacity: 0, y: -30, filter: 'blur(10px)', transition: { duration: 0.3, ease: EASE_QUARTIC } },
 };
 
-/* ── Stagger container — judul, sub-judul, tombol muncul bertahap ── */
-const staggerContainer = {
+/* ── Hero outer stagger — semua baris dipicu oleh parent ini ── */
+const heroStagger = {
   hidden:  {},
+  visible: { transition: { staggerChildren: 0.18, delayChildren: 0.1 } },
+};
+
+/* ── BARIS 1 — "Back-to-Front Reveal"
+   scale: 0.5 + blur(10px) → scale: 1 + blur(0) ── */
+const backToFrontVariant = {
+  hidden:  { opacity: 0, scale: 0.5, filter: 'blur(10px)' },
   visible: {
-    transition: { staggerChildren: 0.1, delayChildren: 0.15 },
+    opacity: 1, scale: 1, filter: 'blur(0px)',
+    transition: { type: 'spring', damping: 18, stiffness: 90 },
   },
 };
 
-/* ── Child slide-up reveal ── */
-const slideUpChild = {
-  hidden:  { opacity: 0, y: 30, filter: 'blur(6px)' },
+/* ── BARIS 2 — "Typewriter" container ── */
+const typewriterContainer = {
+  hidden:  {},
+  visible: { transition: { staggerChildren: 0.04 } },
+};
+const typewriterChar = {
+  hidden:  { opacity: 0, y: 12, filter: 'blur(4px)' },
   visible: {
     opacity: 1, y: 0, filter: 'blur(0px)',
-    transition: { ...SPRING },
+    transition: { type: 'spring', damping: 22, stiffness: 180 },
   },
 };
 
-/* ── Wave child (untuk ProvinceCard header items) ── */
+/* ── BARIS 3 — "Slide-in from Left" ── */
+const slideFromLeft = {
+  hidden:  { opacity: 0, x: '-100%' },
+  visible: {
+    opacity: 1, x: 0,
+    transition: { type: 'spring', damping: 24, stiffness: 110 },
+  },
+};
+
+/* ── BARIS 4 — "Slide-in from Right" ── */
+const slideFromRight = {
+  hidden:  { opacity: 0, x: '100%' },
+  visible: {
+    opacity: 1, x: 0,
+    transition: { type: 'spring', damping: 24, stiffness: 110 },
+  },
+};
+
+/* ── Stat chip — Random Entrance Stagger (4 arah berbeda) ── */
+const chipEntrances = [
+  { hidden: { opacity: 0, y: -60 },  visible: { opacity: 1, y: 0,   transition: { ...SPRING } } }, // atas
+  { hidden: { opacity: 0, x: 60  },  visible: { opacity: 1, x: 0,   transition: { ...SPRING } } }, // kanan
+  { hidden: { opacity: 0, y: 60  },  visible: { opacity: 1, y: 0,   transition: { ...SPRING } } }, // bawah
+  { hidden: { opacity: 0, x: -60 },  visible: { opacity: 1, x: 0,   transition: { ...SPRING } } }, // kiri
+];
+
+/* Chip stagger container */
+const chipStagger = {
+  hidden:  {},
+  visible: { transition: { staggerChildren: 0.13, delayChildren: 0 } },
+};
+
+/* ── CTA / scroll indicator slide-up ── */
+const slideUpChild = {
+  hidden:  { opacity: 0, y: 30, filter: 'blur(6px)' },
+  visible: { opacity: 1, y: 0,  filter: 'blur(0px)', transition: { ...SPRING } },
+};
+
+/* ── Wave child (ProvinceCard header wave) ── */
 const childVariants = {
   hidden:  { opacity: 0, x: -10 },
   visible: (i = 0) => ({
@@ -140,46 +174,29 @@ const cardHover = (color) => ({
   transition: { duration: 0.2, ease: EASE_QUARTIC },
 });
 
-/* ── CTA Button micro-interactions ── */
-const ctaButton = {
-  whileHover: { scale: 1.05, transition: SPRING_FAST },
-  whileTap:   { scale: 0.95, transition: SPRING_FAST },
-};
-
 /* ─────────────────────────────────────────────────────────────
-   CUSTOM TOOLTIP
+   TYPEWRITER TEXT — renders a string char-by-char with stagger
    ───────────────────────────────────────────────────────────── */
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  return (
-    <div style={{
-      background: 'rgba(13, 27, 46, 0.92)',
-      border: '0.5px solid rgba(34,211,238,0.25)',
-      borderRadius: 16,
-      padding: '14px 18px',
-      boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(34,211,238,0.1)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      minWidth: 210,
-    }}>
-      <p style={{ color: '#22D3EE', fontWeight: 800, marginBottom: 10, fontFamily: 'Outfit,sans-serif', fontSize: 13, letterSpacing: .5 }}>
-        {label}
-      </p>
-      {payload.map((entry) => (
-        <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color, flexShrink: 0, boxShadow: `0 0 6px ${entry.color}` }} />
-          <span style={{ color: '#94A3B8', fontSize: 12, flex: 1 }}>{entry.name}</span>
-          <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 13, textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
-            {Number(entry.value).toFixed(2).replace('.', ',')}%
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
+const TypewriterText = ({ text, style = {} }) => (
+  <motion.span
+    variants={typewriterContainer}
+    style={{ display: 'inline-block', ...style }}
+    aria-label={text}
+  >
+    {text.split('').map((char, i) => (
+      <motion.span
+        key={i}
+        variants={typewriterChar}
+        style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : undefined }}
+      >
+        {char}
+      </motion.span>
+    ))}
+  </motion.span>
+);
 
 /* ─────────────────────────────────────────────────────────────
-   ANIMATED COUNTER (elastic ease-out)
+   ANIMATED COUNTER — 0 → target, triggers on intersection
    ───────────────────────────────────────────────────────────── */
 const AnimCounter = ({ target, suffix = '', decimals = 0 }) => {
   const [count, setCount] = useState(0);
@@ -209,7 +226,37 @@ const AnimCounter = ({ target, suffix = '', decimals = 0 }) => {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   PROVINCE CARD (Bento child) — with wave micro-interaction
+   CUSTOM TOOLTIP
+   ───────────────────────────────────────────────────────────── */
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: 'rgba(13,27,46,0.92)',
+      border: '0.5px solid rgba(34,211,238,0.25)',
+      borderRadius: 16, padding: '14px 18px',
+      boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(34,211,238,0.1)',
+      backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+      minWidth: 210,
+    }}>
+      <p style={{ color: '#22D3EE', fontWeight: 800, marginBottom: 10, fontFamily: 'Outfit,sans-serif', fontSize: 13, letterSpacing: .5 }}>
+        {label}
+      </p>
+      {payload.map((entry) => (
+        <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: entry.color, flexShrink: 0, boxShadow: `0 0 6px ${entry.color}` }} />
+          <span style={{ color: '#94A3B8', fontSize: 12, flex: 1 }}>{entry.name}</span>
+          <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 13, textShadow: '0 0 10px rgba(255,255,255,0.2)' }}>
+            {Number(entry.value).toFixed(2).replace('.', ',')}%
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
+   PROVINCE CARD (Bento child)
    ───────────────────────────────────────────────────────────── */
 const ProvinceCard = ({ p, index }) => {
   const latest = data[data.length - 1][p.name];
@@ -218,21 +265,16 @@ const ProvinceCard = ({ p, index }) => {
   return (
     <motion.div
       className="card"
-      custom={index}
       initial="hidden"
       whileInView="visible"
       viewport={{ once: true, amount: 0.15 }}
       variants={{
         hidden:  { opacity: 0, y: 28 },
-        visible: {
-          opacity: 1, y: 0,
-          transition: { ...SPRING, delay: index * 0.07 },
-        },
+        visible: { opacity: 1, y: 0, transition: { ...SPRING, delay: index * 0.07 } },
       }}
       whileHover={cardHover(p.color)}
       style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', cursor: 'default' }}
     >
-      {/* header */}
       <motion.div
         variants={childVariants} custom={0}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
@@ -246,7 +288,6 @@ const ProvinceCard = ({ p, index }) => {
         </div>
       </motion.div>
 
-      {/* mini stats */}
       <motion.div variants={childVariants} custom={1} style={{ display: 'flex', gap: '.65rem' }}>
         <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '.55rem .7rem', textAlign: 'center', border: '0.5px solid rgba(255,255,255,0.06)' }}>
           <div style={{ fontSize: 9, color: '#475569', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2 }}>puncak</div>
@@ -258,7 +299,6 @@ const ProvinceCard = ({ p, index }) => {
         </div>
       </motion.div>
 
-      {/* spark chart */}
       <motion.div variants={childVariants} custom={2} style={{ width: '100%', height: 130 }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
@@ -268,7 +308,6 @@ const ProvinceCard = ({ p, index }) => {
                 <stop offset="95%" stopColor={p.color} stopOpacity={0}    />
               </linearGradient>
             </defs>
-            {/* HIGH-VISIBILITY grid — berkilau namun tidak mendominasi */}
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.3)" vertical={true} horizontal={true} />
             <XAxis dataKey="label" fontSize={8} interval={3} tick={{ fill: '#475569' }} axisLine={false} tickLine={false} />
             <YAxis domain={[0, 13]} hide />
@@ -285,23 +324,25 @@ const ProvinceCard = ({ p, index }) => {
 };
 
 /* ─────────────────────────────────────────────────────────────
-   SECTION HEADER — animated icon + title with stagger
+   SECTION HEADER
    ───────────────────────────────────────────────────────────── */
+const sectionHeaderStagger = {
+  hidden:  {},
+  visible: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
+};
+
 const SectionHeader = ({ icon, title, right }) => (
   <motion.div
     className="section-header"
     style={{ justifyContent: right ? 'space-between' : undefined, marginBottom: '3rem' }}
     initial="hidden"
     animate="visible"
-    variants={staggerContainer}
+    variants={sectionHeaderStagger}
   >
     <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
       <motion.span variants={slideUpChild}>{icon}</motion.span>
       <motion.h2
-        style={{
-          fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1.6rem',
-          color: '#FFFFFF', textShadow: '0 0 10px rgba(255,255,255,0.2)',
-        }}
+        style={{ fontFamily: 'Outfit,sans-serif', fontWeight: 800, fontSize: '1.6rem', color: '#FFFFFF', textShadow: '0 0 10px rgba(255,255,255,0.2)' }}
         variants={slideUpChild}
       >
         {title}
@@ -312,17 +353,41 @@ const SectionHeader = ({ icon, title, right }) => (
 );
 
 /* ─────────────────────────────────────────────────────────────
-   MAIN APP — True SPA with premium motion UI
+   STAT CHIP DATA — angka untuk AnimCounter
+   ───────────────────────────────────────────────────────────── */
+const statChips = [
+  {
+    label: 'periode analisis',
+    staticValue: '2018 – 2025',
+    counter: null,
+  },
+  {
+    label: 'provinsi diamati',
+    staticValue: null,
+    counter: { target: 6, suffix: ' Provinsi', decimals: 0 },
+  },
+  {
+    label: 'total titik data',
+    staticValue: null,
+    counter: { target: 16, suffix: '× 7 seri', decimals: 0 },
+  },
+  {
+    label: 'puncak rata-rata',
+    staticValue: null,
+    counter: { target: peakAvg, suffix: '%', decimals: 2 },
+  },
+];
+
+/* ─────────────────────────────────────────────────────────────
+   MAIN APP
    ───────────────────────────────────────────────────────────── */
 const App = () => {
   const [activeNav, setActiveNav] = useState('beranda');
   const chartScrollRef = useRef(null);
 
-  /* ── Parallax refs ── */
-  const heroRef = useRef(null);
-  const { scrollY } = useScroll({ container: heroRef });
-  // Background bergerak 20% lebih lambat dari konten depan
-  const bgY = useTransform(scrollY, [0, 600], [0, 120]);  // 20% of 600
+  /* ── Parallax background ── */
+  const { scrollY } = useScroll();
+  const bgY = useTransform(scrollY, [0, 600], [0, 120]);
 
   const navItems = [
     { id: 'beranda',     label: 'Beranda'     },
@@ -342,10 +407,12 @@ const App = () => {
     return patterns[i % patterns.length];
   };
 
+  const lastIndex = teamMembers.length - 1;
+
   return (
     <div style={{ background: '#0F172A', minHeight: '100vh', fontFamily: 'Outfit, sans-serif', color: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── FLOATING PILL NAV with layoutId sliding indicator ── */}
+      {/* ── FLOATING PILL NAV ── */}
       <nav className="pill-nav" aria-label="Navigasi utama">
         <span className="pill-nav__logo">K<span style={{ color: '#A78BFA' }}>8</span></span>
         {navItems.map(n => (
@@ -364,8 +431,7 @@ const App = () => {
                 style={{
                   position: 'absolute', inset: 0,
                   background: 'linear-gradient(135deg, #22D3EE, #A78BFA)',
-                  borderRadius: 99,
-                  zIndex: -1,
+                  borderRadius: 99, zIndex: -1,
                   boxShadow: '0 0 18px rgba(34,211,238,0.45)',
                 }}
                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
@@ -375,9 +441,7 @@ const App = () => {
               position: 'relative', zIndex: 1,
               color: activeNav === n.id ? '#0F172A' : '#64748B',
               fontWeight: activeNav === n.id ? 800 : 600,
-              transition: 'color 0.2s',
-              fontSize: '.82rem',
-              fontFamily: 'Outfit, sans-serif',
+              transition: 'color 0.2s', fontSize: '.82rem', fontFamily: 'Outfit, sans-serif',
             }}>
               {n.label}
             </span>
@@ -385,11 +449,11 @@ const App = () => {
         ))}
       </nav>
 
-      {/* ── MAIN CONTENT RENDERER — AnimatePresence mode='wait' ── */}
+      {/* ── MAIN CONTENT — AnimatePresence mode='wait' ── */}
       <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' }}>
         <AnimatePresence mode="wait">
 
-          {/* ────────────────── BERANDA ────────────────── */}
+          {/* ══════════════ BERANDA ══════════════ */}
           {activeNav === 'beranda' && (
             <motion.header
               key="beranda"
@@ -403,11 +467,10 @@ const App = () => {
                 justifyContent: 'center', textAlign: 'center', padding: '8rem 2rem 6rem',
               }}
             >
-              {/* ── PARALLAX BACKGROUND LAYER (bergerak 20% lebih lambat) ── */}
+              {/* ── Parallax background (20% slower) ── */}
               <motion.div
                 style={{
-                  position: 'absolute', inset: '-20%', zIndex: 0,
-                  y: bgY,
+                  position: 'absolute', inset: '-20%', zIndex: 0, y: bgY,
                   background: `
                     radial-gradient(ellipse 80% 60% at 20% 30%, rgba(34,211,238,0.14) 0%, transparent 60%),
                     radial-gradient(ellipse 60% 50% at 80% 70%, rgba(167,139,250,0.14) 0%, transparent 60%),
@@ -415,32 +478,33 @@ const App = () => {
                     linear-gradient(180deg, #0F172A 0%, #061020 100%)
                   `,
                   animation: 'meshMove 12s ease-in-out infinite',
-                  backgroundSize: '200% 200%',
-                  willChange: 'transform',
+                  backgroundSize: '200% 200%', willChange: 'transform',
                 }}
               />
-
-              {/* Static dot-grid overlay (non-parallax) */}
+              {/* Dot grid */}
               <div style={{
                 position: 'absolute', inset: 0, zIndex: 1,
                 backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)',
                 backgroundSize: '32px 32px', pointerEvents: 'none',
               }} />
 
-              {/* ── STAGGERED CONTENT CONTAINER ── */}
+              {/* ══ STAGGER CONTAINER — dipicu setelah page entry ══ */}
               <motion.div
                 style={{ position: 'relative', zIndex: 2, maxWidth: 900, margin: '0 auto' }}
-                variants={staggerContainer}
+                variants={heroStagger}
                 initial="hidden"
                 animate="visible"
               >
-                {/* Badge — slide-up item 1 */}
+
+                {/* ── BARIS 1: "Proposal Proyek Analisis Data"
+                         Gaya: Back-to-Front Reveal
+                         scale 0.5, blur(10px) → scale 1, blur(0) ── */}
                 <motion.div
-                  variants={slideUpChild}
+                  variants={backToFrontVariant}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: '.5rem',
                     background: 'rgba(34,211,238,0.08)', border: '0.5px solid rgba(34,211,238,0.3)',
-                    borderRadius: 99, padding: '.3rem 1rem',
+                    borderRadius: 99, padding: '.3rem 1.1rem',
                     fontSize: '.72rem', fontWeight: 700, letterSpacing: 2.5,
                     textTransform: 'uppercase', color: '#22D3EE', marginBottom: '1.75rem',
                   }}
@@ -449,78 +513,103 @@ const App = () => {
                   Proposal Proyek Analisis Data
                 </motion.div>
 
-                {/* ── STAGGERED TITLE — slide-up item 2 ── */}
-                <motion.h1
-                  variants={slideUpChild}
-                  style={{
-                    fontFamily: 'Outfit, sans-serif',
-                    fontSize: 'clamp(2.1rem, 6vw, 3.8rem)',
-                    fontWeight: 900, lineHeight: 1.08,
-                    letterSpacing: '-0.5px', marginBottom: '2.75rem',
-                    color: '#FFFFFF',
-                    textShadow: '0 0 10px rgba(255,255,255,0.2)',
-                  }}
-                >
-                  {/* Each line staggered with inner container */}
-                  <motion.span
+                {/* ── BARIS 2 + 3 + 4 wrapper ── */}
+                <div style={{ marginBottom: '2.75rem' }}>
+
+                  {/* ── BARIS 2: "Dinamika Pengangguran Pulau Jawa"
+                           Gaya: Typewriter Effect (karakter satu per satu) ── */}
+                  <motion.div
                     variants={{
                       hidden:  {},
-                      visible: { transition: { staggerChildren: 0.12 } },
+                      visible: { transition: { staggerChildren: 0.04 } },
                     }}
-                    style={{ display: 'block' }}
+                    style={{
+                      fontFamily: 'Outfit, sans-serif',
+                      fontSize: 'clamp(2.1rem, 6vw, 3.8rem)',
+                      fontWeight: 900, lineHeight: 1.1,
+                      letterSpacing: '-0.5px',
+                      color: '#FFFFFF', textShadow: '0 0 12px rgba(255,255,255,0.25)',
+                      display: 'block', marginBottom: '.2rem',
+                    }}
+                    aria-label="Dinamika Pengangguran Pulau Jawa"
                   >
-                    <motion.span
-                      variants={slideUpChild}
-                      style={{ display: 'block' }}
-                    >
-                      Dinamika Pengangguran
-                    </motion.span>
-                    <motion.span
-                      variants={slideUpChild}
-                      style={{ display: 'block' }}
-                    >
-                      Pulau Jawa
-                    </motion.span>
-                    <motion.span
-                      variants={slideUpChild}
+                    {'Dinamika Pengangguran Pulau Jawa'.split('').map((char, i) => (
+                      <motion.span
+                        key={i}
+                        variants={typewriterChar}
+                        style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : undefined }}
+                      >
+                        {char}
+                      </motion.span>
+                    ))}
+                  </motion.div>
+
+                  {/* ── BARIS 3 + 4 container (overflow hidden untuk clip slide) ── */}
+                  <div style={{
+                    overflow: 'hidden',
+                    fontSize: 'clamp(1rem, 3.5vw, 1.75rem)',
+                    fontFamily: 'Outfit, sans-serif', fontWeight: 700,
+                    lineHeight: 1.25, marginTop: '.75rem',
+                  }}>
+                    {/* ── BARIS 3: "Era Sebelum, Saat,"
+                             Gaya: Slide-in from Left  x: -100% → 0 ── */}
+                    <motion.div
+                      variants={slideFromLeft}
                       style={{
-                        display: 'block', marginTop: '1rem',
-                        fontSize: 'clamp(1rem, 3.5vw, 1.8rem)',
-                        whiteSpace: 'nowrap',
-                        background: 'linear-gradient(90deg, #22D3EE, #A78BFA, #22D3EE)',
+                        background: 'linear-gradient(90deg, #22D3EE, #A78BFA)',
                         backgroundSize: '200% auto',
                         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                         animation: 'shimmer 4s linear infinite',
+                        display: 'block',
                       }}
                     >
-                      Era Sebelum, Saat, dan Pasca Pandemi
-                    </motion.span>
-                  </motion.span>
-                </motion.h1>
+                      Era Sebelum, Saat,
+                    </motion.div>
 
-                {/* Stat chips — slide-up item 3 */}
+                    {/* ── BARIS 4: "dan Pasca Pandemi (2018–2025)"
+                             Gaya: Slide-in from Right  x: 100% → 0
+                             Bertemu dengan Baris 3 di tengah layar ── */}
+                    <motion.div
+                      variants={slideFromRight}
+                      style={{
+                        background: 'linear-gradient(90deg, #A78BFA, #22D3EE)',
+                        backgroundSize: '200% auto',
+                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                        animation: 'shimmer 4s linear infinite reverse',
+                        display: 'block',
+                      }}
+                    >
+                      dan Pasca Pandemi (2018–2025)
+                    </motion.div>
+                  </div>
+                </div>
+
+                {/* ── STAT CHIPS — Random Entrance Stagger (4 arah berbeda)
+                       Setiap kotak masuk dari arah yang berbeda, dengan AnimCounter ── */}
                 <motion.div
-                  variants={slideUpChild}
+                  variants={chipStagger}
                   style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}
                 >
-                  {[
-                    { label: 'periode analisis',  value: '2018 – 2025' },
-                    { label: 'provinsi diamati',  value: '6 Provinsi'  },
-                    { label: 'total titik data',  value: <><AnimCounter target={16} />× 7 seri</> },
-                    { label: 'puncak rata-rata',  value: <><AnimCounter target={peakAvg} decimals={2} />%</> },
-                  ].map((s, i) => (
+                  {statChips.map((chip, i) => (
                     <motion.div
-                      key={i} className="stat-chip"
-                      whileHover={{ scale: 1.05, ...ctaButton.whileHover }}
-                      whileTap={ctaButton.whileTap}
+                      key={i}
+                      className="stat-chip"
+                      variants={chipEntrances[i]}  /* setiap chip punya arah masuk unik */
+                      whileHover={{ scale: 1.05, transition: SPRING_FAST }}
+                      whileTap={{ scale: 0.95, transition: SPRING_FAST }}
                     >
-                      <div className="stat-chip__value">{s.value}</div>
-                      <div className="stat-chip__label">{s.label}</div>
+                      <div className="stat-chip__value">
+                        {chip.counter
+                          ? <AnimCounter target={chip.counter.target} suffix={chip.counter.suffix} decimals={chip.counter.decimals} />
+                          : chip.staticValue
+                        }
+                      </div>
+                      <div className="stat-chip__label">{chip.label}</div>
                     </motion.div>
                   ))}
                 </motion.div>
 
-                {/* CTA Button — slide-up item 4 */}
+                {/* ── CTA Button ── */}
                 <motion.div variants={slideUpChild} style={{ marginTop: '3rem' }}>
                   <motion.button
                     id="cta-jelajahi"
@@ -560,7 +649,7 @@ const App = () => {
             </motion.header>
           )}
 
-          {/* ────────────────── TIM ────────────────── */}
+          {/* ══════════════ TIM ══════════════ */}
           {activeNav === 'tim' && (
             <motion.main
               key="tim"
@@ -571,8 +660,9 @@ const App = () => {
               style={{ padding: '8rem 2rem 5rem', maxWidth: 1000, margin: '0 auto', width: '100%' }}
             >
               <SectionHeader icon={<Users style={{ color: '#22D3EE', width: 32, height: 32 }} />} title="Susunan Tim Pelaksana" />
-              
+
               <div className="card" style={{ overflow: 'hidden' }}>
+                {/* Table header */}
                 <div style={{
                   display: 'grid', gridTemplateColumns: '60px 1fr 1fr',
                   background: 'linear-gradient(90deg, rgba(34,211,238,0.12), rgba(167,139,250,0.08))',
@@ -584,52 +674,81 @@ const App = () => {
                   <span>Nama Lengkap Anggota</span>
                   <span>Nomor Induk Mahasiswa (NIM)</span>
                 </div>
-                {teamMembers.map((member, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
-                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                    transition={{ ...SPRING, delay: index * 0.05 + 0.15 }}
-                    style={{
-                      display: 'grid', gridTemplateColumns: '60px 1fr 1fr',
-                      padding: '1rem 1.5rem', alignItems: 'center',
-                      borderBottom: index < teamMembers.length - 1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none',
-                      background: index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
-                    }}
-                    whileHover={{ background: 'rgba(34,211,238,0.04)', x: 4, transition: { duration: 0.2 } }}
-                  >
-                    <span style={{ textAlign: 'center', fontWeight: 700, color: '#334155', fontFamily: 'monospace', fontSize: '1rem' }}>
-                      {String(index + 1).padStart(2, '0')}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
-                      <div style={{
-                        width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
-                        background: `linear-gradient(135deg, hsl(${index * 40 + 180}, 80%, 50%), hsl(${index * 40 + 220}, 80%, 60%))`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: '#0F172A', fontWeight: 800, fontSize: '.85rem',
-                        boxShadow: `0 0 12px hsl(${index * 40 + 180}, 80%, 50%, 0.35)`,
-                      }}>
-                        {member.nama.charAt(0)}
-                      </div>
-                      <span style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '.9rem', textShadow: '0 0 10px rgba(255,255,255,0.15)' }}>{member.nama}</span>
-                    </div>
-                    <div>
-                      <span style={{
-                        fontFamily: 'monospace', fontWeight: 700, fontSize: '.88rem',
-                        color: '#22D3EE', letterSpacing: .8,
-                        background: 'rgba(34,211,238,0.08)', padding: '.2rem .75rem', borderRadius: 8,
-                        border: '0.5px solid rgba(34,211,238,0.2)',
-                      }}>
-                        {member.nim}
+
+                {teamMembers.map((member, index) => {
+                  const isLast   = index === lastIndex;
+                  const isOdd    = index % 2 !== 0;  // 1-based: 1,3,5 = index 0,2,4 = isOdd false
+
+                  /* ── Determine animation direction ──
+                     isLast          → Final Reveal: y:50% → 0
+                     odd  row (1,3,5…)  → Left-to-Right: x:-50% → 0
+                     even row (2,4,6…)  → Right-to-Left: x:50% → 0 */
+                  let rowInitial, rowAnimate;
+                  if (isLast) {
+                    // Final Reveal — Bottom to Top
+                    rowInitial = { opacity: 0, y: '50%', filter: 'blur(4px)' };
+                    rowAnimate = { opacity: 1, y: 0,     filter: 'blur(0px)' };
+                  } else if (!isOdd) {
+                    // index 0,2,4,6 = baris ke-1,3,5,7 → Left to Right
+                    rowInitial = { opacity: 0, x: '-50%', filter: 'blur(4px)' };
+                    rowAnimate = { opacity: 1, x: 0,      filter: 'blur(0px)' };
+                  } else {
+                    // index 1,3,5,7 = baris ke-2,4,6,8 → Right to Left
+                    rowInitial = { opacity: 0, x: '50%',  filter: 'blur(4px)' };
+                    rowAnimate = { opacity: 1, x: 0,      filter: 'blur(0px)' };
+                  }
+
+                  return (
+                    <motion.div
+                      key={index}
+                      initial={rowInitial}
+                      animate={rowAnimate}
+                      transition={{ ...SPRING, delay: index * 0.06 + 0.15 }}
+                      style={{
+                        display: 'grid', gridTemplateColumns: '60px 1fr 1fr',
+                        padding: '1rem 1.5rem', alignItems: 'center',
+                        borderBottom: index < lastIndex ? '0.5px solid rgba(255,255,255,0.05)' : 'none',
+                        background: index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
+                        /* overflow:hidden agar x:-50% tidak menyebabkan horizontal scroll */
+                        overflow: 'hidden',
+                      }}
+                      whileHover={{ background: 'rgba(34,211,238,0.04)', x: 4, transition: { duration: 0.2 } }}
+                    >
+                      <span style={{ textAlign: 'center', fontWeight: 700, color: '#334155', fontFamily: 'monospace', fontSize: '1rem' }}>
+                        {String(index + 1).padStart(2, '0')}
                       </span>
-                    </div>
-                  </motion.div>
-                ))}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+                        <div style={{
+                          width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+                          background: `linear-gradient(135deg, hsl(${index * 40 + 180}, 80%, 50%), hsl(${index * 40 + 220}, 80%, 60%))`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: '#0F172A', fontWeight: 800, fontSize: '.85rem',
+                          boxShadow: `0 0 12px hsl(${index * 40 + 180}deg 80% 50% / 35%)`,
+                        }}>
+                          {member.nama.charAt(0)}
+                        </div>
+                        <span style={{ fontWeight: 600, color: '#FFFFFF', fontSize: '.9rem', textShadow: '0 0 10px rgba(255,255,255,0.15)' }}>
+                          {member.nama}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{
+                          fontFamily: 'monospace', fontWeight: 700, fontSize: '.88rem',
+                          color: '#22D3EE', letterSpacing: .8,
+                          background: 'rgba(34,211,238,0.08)', padding: '.2rem .75rem', borderRadius: 8,
+                          border: '0.5px solid rgba(34,211,238,0.2)',
+                        }}>
+                          {member.nim}
+                        </span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             </motion.main>
           )}
 
-          {/* ────────────────── VISUALISASI ────────────────── */}
+          {/* ══════════════ VISUALISASI ══════════════ */}
           {activeNav === 'visualisasi' && (
             <motion.main
               key="visualisasi"
@@ -683,7 +802,6 @@ const App = () => {
                   <div style={{ minWidth: 2200, height: 650, position: 'relative' }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={data} margin={{ top: 50, right: 30, bottom: 80, left: 10 }} barCategoryGap="30%" barGap={2}>
-                        {/* HIGH-VISIBILITY grid lines */}
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.3)" vertical={true} horizontal={true} />
                         <XAxis dataKey="label" tick={{ fill: '#FFFFFF', fontWeight: 700, fontSize: 12, fontFamily: 'Outfit,sans-serif' }} axisLine={{ stroke: 'rgba(255,255,255,0.3)' }} tickLine={{ stroke: 'rgba(255,255,255,0.3)' }} dy={10} />
                         <YAxis domain={[0, 13]} tick={{ fill: '#FFFFFF', fontWeight: 600, fontSize: 11 }} axisLine={{ stroke: 'rgba(255,255,255,0.3)' }} tickLine={{ stroke: 'rgba(255,255,255,0.3)' }} tickFormatter={v => `${v}%`} width={42} />
@@ -697,12 +815,11 @@ const App = () => {
                         <Line type="monotone" dataKey="Rata-rata" stroke="#FFFFFF" strokeWidth={3.5} strokeDasharray="0"
                           dot={{ r: 6, fill: '#0F172A', strokeWidth: 2.5, stroke: '#FFFFFF' }}
                           activeDot={{ r: 8, fill: '#FFFFFF', stroke: '#0F172A', strokeWidth: 2 }}>
-                          <LabelList dataKey="Rata-rata" position="top" offset={14} style={{ fontSize: 14, fill: '#FFFFFF', fontWeight: 800, textShadow: '0 0 10px rgba(255,255,255,0.2)' }} formatter={(val) => val.toFixed(2).replace('.', ',')} />
+                          <LabelList dataKey="Rata-rata" position="top" offset={14} style={{ fontSize: 14, fill: '#FFFFFF', fontWeight: 800 }} formatter={(val) => val.toFixed(2).replace('.', ',')} />
                         </Line>
                       </ComposedChart>
                     </ResponsiveContainer>
 
-                    {/* Phase labels */}
                     <div style={{
                       position: 'absolute', left: 42, bottom: 152,
                       width: 'calc(100% - 72px)', height: 36,
@@ -730,7 +847,7 @@ const App = () => {
             </motion.main>
           )}
 
-          {/* ────────────────── TREN DAERAH ────────────────── */}
+          {/* ══════════════ TREN DAERAH ══════════════ */}
           {activeNav === 'tren' && (
             <motion.main
               key="tren"
@@ -741,7 +858,6 @@ const App = () => {
               style={{ padding: '8rem 2rem 5rem', maxWidth: 1280, margin: '0 auto', width: '100%' }}
             >
               <SectionHeader icon={<TrendingUp style={{ color: '#22D3EE', width: 32, height: 32 }} />} title="Tren Pertumbuhan Per Daerah" />
-
               <div className="bento-grid">
                 {provinceColors.slice(0, 6).map((p, i) => (
                   <div key={p.name} className={bentoClass(i)}>
@@ -755,7 +871,7 @@ const App = () => {
             </motion.main>
           )}
 
-          {/* ────────────────── METODOLOGI ────────────────── */}
+          {/* ══════════════ METODOLOGI ══════════════ */}
           {activeNav === 'metodologi' && (
             <motion.main
               key="metodologi"
@@ -780,7 +896,6 @@ const App = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...SPRING, delay: 0.25 }}
               >
-                {/* ambient blobs */}
                 <div style={{ position: 'absolute', top: 0, right: 0, width: 320, height: 320, borderRadius: '50%', background: 'rgba(34,211,238,0.05)', filter: 'blur(60px)', pointerEvents: 'none' }} />
                 <div style={{ position: 'absolute', bottom: 0, left: 0, width: 260, height: 260, borderRadius: '50%', background: 'rgba(167,139,250,0.05)', filter: 'blur(60px)', pointerEvents: 'none' }} />
 
@@ -793,7 +908,7 @@ const App = () => {
                       </h3>
                     </div>
                     <p style={{ color: '#94A3B8', lineHeight: 1.8, fontSize: '.9rem' }}>
-                      Data dikompilasi dari laporan <strong style={{ color: '#FFFFFF' }}>Berita Resmi Statistik (BRS)</strong> Badan Pusat Statistik. Periode pengamatan mencakup transisi kebijakan PSBB ke PPKM hingga masa normalisasi ekonomi 2025. Analisis ini ditujukan untuk memberikan gambaran komprehensif bagi pemangku kebijakan ketenagakerjaan.
+                      Data dikompilasi dari laporan <strong style={{ color: '#FFFFFF' }}>Berita Resmi Statistik (BRS)</strong> Badan Pusat Statistik. Periode pengamatan mencakup transisi kebijakan PSBB ke PPKM hingga masa normalisasi ekonomi 2025.
                     </p>
                   </div>
 
@@ -835,10 +950,8 @@ const App = () => {
         </AnimatePresence>
       </div>
 
-      {/* ── GESTURE SCROLL — Receives ref for horz scrolling charts.
-          GestureScroll menggunakan scrollTop langsung dan TIDAK terganggu
-          oleh AnimatePresence atau Framer Motion karena beroperasi di DOM level,
-          bukan di React render layer. rAF loop tetap berjalan independen. ── */}
+      {/* ── GESTURE SCROLL — GestureScroll beroperasi di DOM level via scrollTop
+          langsung, tidak terpengaruh oleh AnimatePresence atau Framer Motion. ── */}
       <GestureScroll chartScrollRef={chartScrollRef} />
 
       {/* ── FOOTER ── */}
