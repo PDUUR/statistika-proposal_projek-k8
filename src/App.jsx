@@ -73,49 +73,44 @@ const peakAvg = Math.max(...data.map(d => d['Rata-rata']));
    ANIMATION CONSTANTS
    ───────────────────────────────────────────────────────────── */
 
-/* ── Physics spring — organik & mewah ── */
-const SPRING = { type: 'spring', damping: 20, stiffness: 100 };
-
-/* ── Fast spring untuk micro-interactions ── */
+/* ── Slower animations per user request (0.8s - 1.2s) ── */
+const SLOW_TWEEN = { duration: 1.2, ease: [0.22, 1, 0.36, 1] };
+const TYPEWRITER_TWEEN = { duration: 0.8, ease: [0.22, 1, 0.36, 1] };
+const SPRING = { type: 'spring', damping: 20, stiffness: 100 }; // kept for general slow things
 const SPRING_FAST = { type: 'spring', damping: 25, stiffness: 260 };
-
-/* ── Quartic Ease Out ── */
 const EASE_QUARTIC = [0.22, 1, 0.36, 1];
 
-/* ── Global page transition ──
-   Entry  0.6s spring | Exit 0.3s fast (ritme navigasi) */
 const pageVariants = {
   initial: { opacity: 0, y: 30,  filter: 'blur(8px)' },
-  animate: { opacity: 1, y: 0,   filter: 'blur(0px)', transition: { ...SPRING } },
-  exit:    { opacity: 0, y: -30, filter: 'blur(10px)', transition: { duration: 0.3, ease: EASE_QUARTIC } },
+  animate: { opacity: 1, y: 0,   filter: 'blur(0px)', transition: SLOW_TWEEN },
+  exit:    { opacity: 0, y: -30, filter: 'blur(10px)', transition: { duration: 0.8, ease: EASE_QUARTIC } },
 };
 
-/* ── Hero outer stagger — semua baris dipicu oleh parent ini ── */
+/* ── Hero outer stagger ── */
 const heroStagger = {
   hidden:  {},
-  visible: { transition: { staggerChildren: 0.18, delayChildren: 0.1 } },
+  visible: { transition: { staggerChildren: 0.2, delayChildren: 0.1 } },
 };
 
-/* ── BARIS 1 — "Back-to-Front Reveal"
-   scale: 0.5 + blur(10px) → scale: 1 + blur(0) ── */
+/* ── BARIS 1 — "Back-to-Front Reveal" ── */
 const backToFrontVariant = {
-  hidden:  { opacity: 0, scale: 0.5, filter: 'blur(10px)' },
+  hidden:  { opacity: 0, scale: 0.8, filter: 'blur(10px)' },
   visible: {
     opacity: 1, scale: 1, filter: 'blur(0px)',
-    transition: { type: 'spring', damping: 18, stiffness: 90 },
+    transition: SLOW_TWEEN,
   },
 };
 
-/* ── BARIS 2 — "Typewriter" container ── */
+/* ── BARIS 2 — "Typewriter" Container ── */
 const typewriterContainer = {
   hidden:  {},
-  visible: { transition: { staggerChildren: 0.04 } },
+  visible: { transition: { staggerChildren: 0.08 } }, // Diperlambat
 };
 const typewriterChar = {
   hidden:  { opacity: 0, y: 12, filter: 'blur(4px)' },
   visible: {
     opacity: 1, y: 0, filter: 'blur(0px)',
-    transition: { type: 'spring', damping: 22, stiffness: 180 },
+    transition: TYPEWRITER_TWEEN,
   },
 };
 
@@ -124,7 +119,7 @@ const slideFromLeft = {
   hidden:  { opacity: 0, x: '-100%' },
   visible: {
     opacity: 1, x: 0,
-    transition: { type: 'spring', damping: 24, stiffness: 110 },
+    transition: SLOW_TWEEN,
   },
 };
 
@@ -133,16 +128,16 @@ const slideFromRight = {
   hidden:  { opacity: 0, x: '100%' },
   visible: {
     opacity: 1, x: 0,
-    transition: { type: 'spring', damping: 24, stiffness: 110 },
+    transition: SLOW_TWEEN,
   },
 };
 
-/* ── Stat chip — Random Entrance Stagger (4 arah berbeda) ── */
+/* ── Stat chip — Random Entrance Stagger ── */
 const chipEntrances = [
-  { hidden: { opacity: 0, y: -60 },  visible: { opacity: 1, y: 0,   transition: { ...SPRING } } }, // atas
-  { hidden: { opacity: 0, x: 60  },  visible: { opacity: 1, x: 0,   transition: { ...SPRING } } }, // kanan
-  { hidden: { opacity: 0, y: 60  },  visible: { opacity: 1, y: 0,   transition: { ...SPRING } } }, // bawah
-  { hidden: { opacity: 0, x: -60 },  visible: { opacity: 1, x: 0,   transition: { ...SPRING } } }, // kiri
+  { hidden: { opacity: 0, y: -60 },  visible: { opacity: 1, y: 0,   transition: SLOW_TWEEN } }, // atas
+  { hidden: { opacity: 0, x: 60  },  visible: { opacity: 1, x: 0,   transition: SLOW_TWEEN } }, // kanan
+  { hidden: { opacity: 0, y: 60  },  visible: { opacity: 1, y: 0,   transition: SLOW_TWEEN } }, // bawah
+  { hidden: { opacity: 0, x: -60 },  visible: { opacity: 1, x: 0,   transition: SLOW_TWEEN } }, // kiri
 ];
 
 /* Chip stagger container */
@@ -154,7 +149,7 @@ const chipStagger = {
 /* ── CTA / scroll indicator slide-up ── */
 const slideUpChild = {
   hidden:  { opacity: 0, y: 30, filter: 'blur(6px)' },
-  visible: { opacity: 1, y: 0,  filter: 'blur(0px)', transition: { ...SPRING } },
+  visible: { opacity: 1, y: 0,  filter: 'blur(0px)', transition: SLOW_TWEEN },
 };
 
 /* ── Wave child (ProvinceCard header wave) ── */
@@ -207,7 +202,7 @@ const AnimCounter = ({ target, suffix = '', decimals = 0 }) => {
     const obs = new IntersectionObserver(([e]) => {
       if (e.isIntersecting && !started.current) {
         started.current = true;
-        const dur = 1600;
+        const dur = 3000;
         const start = performance.now();
         const step = (now) => {
           const progress = Math.min((now - start) / dur, 1);
@@ -516,71 +511,73 @@ const App = () => {
                 {/* ── BARIS 2 + 3 + 4 wrapper ── */}
                 <div style={{ marginBottom: '2.75rem' }}>
 
-                  {/* ── BARIS 2: "Dinamika Pengangguran Pulau Jawa"
-                           Gaya: Typewriter Effect (karakter satu per satu) ── */}
+                  {/* ── BARIS 2 & 3: "Dinamika Pengangguran" & "Pulau Jawa" ── */}
                   <motion.div
-                    variants={{
-                      hidden:  {},
-                      visible: { transition: { staggerChildren: 0.04 } },
-                    }}
+                    variants={typewriterContainer}
                     style={{
                       fontFamily: 'Outfit, sans-serif',
                       fontSize: 'clamp(2.1rem, 6vw, 3.8rem)',
                       fontWeight: 900, lineHeight: 1.1,
                       letterSpacing: '-0.5px',
                       color: '#FFFFFF', textShadow: '0 0 12px rgba(255,255,255,0.25)',
-                      display: 'block', marginBottom: '.2rem',
+                      marginBottom: '.2rem',
                     }}
-                    aria-label="Dinamika Pengangguran Pulau Jawa"
                   >
-                    {'Dinamika Pengangguran Pulau Jawa'.split('').map((char, i) => (
-                      <motion.span
-                        key={i}
-                        variants={typewriterChar}
-                        style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : undefined }}
-                      >
-                        {char}
-                      </motion.span>
-                    ))}
+                    <div aria-label="Dinamika Pengangguran">
+                      {'Dinamika Pengangguran'.split('').map((char, i) => (
+                        <motion.span
+                          key={`l1-${i}`}
+                          variants={typewriterChar}
+                          style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : undefined }}
+                        >
+                          {char}
+                        </motion.span>
+                      ))}
+                    </div>
+                    <div aria-label="Pulau Jawa">
+                      {'Pulau Jawa'.split('').map((char, i) => (
+                        <motion.span
+                          key={`l2-${i}`}
+                          variants={typewriterChar}
+                          style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : undefined }}
+                        >
+                          {char}
+                        </motion.span>
+                      ))}
+                    </div>
                   </motion.div>
 
-                  {/* ── BARIS 3 + 4 container (overflow hidden untuk clip slide) ── */}
+                  {/* ── BARIS 4 container ── */}
                   <div style={{
                     overflow: 'hidden',
+                    display: 'flex', justifyContent: 'center', flexWrap: 'wrap',
                     fontSize: 'clamp(1rem, 3.5vw, 1.75rem)',
                     fontFamily: 'Outfit, sans-serif', fontWeight: 700,
                     lineHeight: 1.25, marginTop: '.75rem',
                   }}>
-                    {/* ── BARIS 3: "Era Sebelum, Saat,"
-                             Gaya: Slide-in from Left  x: -100% → 0 ── */}
-                    <motion.div
+                    <motion.span
                       variants={slideFromLeft}
                       style={{
                         background: 'linear-gradient(90deg, #22D3EE, #A78BFA)',
                         backgroundSize: '200% auto',
                         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                         animation: 'shimmer 4s linear infinite',
-                        display: 'block',
                       }}
                     >
-                      Era Sebelum, Saat,
-                    </motion.div>
+                      Era Sebelum, Saat,&nbsp;
+                    </motion.span>
 
-                    {/* ── BARIS 4: "dan Pasca Pandemi (2018–2025)"
-                             Gaya: Slide-in from Right  x: 100% → 0
-                             Bertemu dengan Baris 3 di tengah layar ── */}
-                    <motion.div
+                    <motion.span
                       variants={slideFromRight}
                       style={{
                         background: 'linear-gradient(90deg, #A78BFA, #22D3EE)',
                         backgroundSize: '200% auto',
                         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                         animation: 'shimmer 4s linear infinite reverse',
-                        display: 'block',
                       }}
                     >
-                      dan Pasca Pandemi (2018–2025)
-                    </motion.div>
+                      dan Pasca Pandemi
+                    </motion.span>
                   </div>
                 </div>
 
@@ -618,16 +615,17 @@ const App = () => {
                       display: 'inline-flex', alignItems: 'center', gap: '.6rem',
                       background: 'linear-gradient(135deg, #22D3EE, #A78BFA)',
                       border: 'none', borderRadius: 99, cursor: 'pointer',
-                      padding: '.75rem 2rem', color: '#0F172A',
-                      fontFamily: 'Outfit, sans-serif', fontWeight: 800,
-                      fontSize: '.95rem', letterSpacing: .5,
+                      padding: '.75rem 2.5rem', color: '#0F172A',
+                      fontFamily: 'Outfit, sans-serif', fontWeight: 900,
+                      fontSize: '1.2rem', letterSpacing: 1,
                       boxShadow: '0 0 28px rgba(34,211,238,0.4), 0 8px 24px rgba(0,0,0,0.3)',
                     }}
-                    whileHover={{ scale: 1.05, boxShadow: '0 0 40px rgba(34,211,238,0.6), 0 12px 32px rgba(0,0,0,0.4)', transition: SPRING_FAST }}
-                    whileTap={{ scale: 0.95, transition: SPRING_FAST }}
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                    whileHover={{ scale: 1.15, boxShadow: '0 0 40px rgba(34,211,238,0.6), 0 12px 32px rgba(0,0,0,0.4)' }}
+                    whileTap={{ scale: 0.95 }}
                   >
-                    Jelajahi Dashboard
-                    <ChevronDown size={18} />
+                    Gazz
                   </motion.button>
                 </motion.div>
 
@@ -677,23 +675,19 @@ const App = () => {
 
                 {teamMembers.map((member, index) => {
                   const isLast   = index === lastIndex;
-                  const isOdd    = index % 2 !== 0;  // 1-based: 1,3,5 = index 0,2,4 = isOdd false
+                  const displayIndex = index + 1; // 1-based index (1, 2, 3...)
+                  const isOdd    = displayIndex % 2 !== 0; // True for 1, 3, 5
 
-                  /* ── Determine animation direction ──
-                     isLast          → Final Reveal: y:50% → 0
-                     odd  row (1,3,5…)  → Left-to-Right: x:-50% → 0
-                     even row (2,4,6…)  → Right-to-Left: x:50% → 0 */
                   let rowInitial, rowAnimate;
                   if (isLast) {
-                    // Final Reveal — Bottom to Top
                     rowInitial = { opacity: 0, y: '50%', filter: 'blur(4px)' };
                     rowAnimate = { opacity: 1, y: 0,     filter: 'blur(0px)' };
-                  } else if (!isOdd) {
-                    // index 0,2,4,6 = baris ke-1,3,5,7 → Left to Right
+                  } else if (isOdd) {
+                    // Baris Ganjil (1, 3, 5): Masuk dari Kiri ke Kanan
                     rowInitial = { opacity: 0, x: '-50%', filter: 'blur(4px)' };
                     rowAnimate = { opacity: 1, x: 0,      filter: 'blur(0px)' };
                   } else {
-                    // index 1,3,5,7 = baris ke-2,4,6,8 → Right to Left
+                    // Baris Genap (2, 4, 6): Masuk dari Kanan ke Kiri
                     rowInitial = { opacity: 0, x: '50%',  filter: 'blur(4px)' };
                     rowAnimate = { opacity: 1, x: 0,      filter: 'blur(0px)' };
                   }
@@ -703,14 +697,12 @@ const App = () => {
                       key={index}
                       initial={rowInitial}
                       animate={rowAnimate}
-                      transition={{ ...SPRING, delay: index * 0.06 + 0.15 }}
+                      transition={{ ...SLOW_TWEEN, delay: index * 0.1 + 0.15 }}
                       style={{
                         display: 'grid', gridTemplateColumns: '60px 1fr 1fr',
                         padding: '1rem 1.5rem', alignItems: 'center',
                         borderBottom: index < lastIndex ? '0.5px solid rgba(255,255,255,0.05)' : 'none',
                         background: index % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
-                        /* overflow:hidden agar x:-50% tidak menyebabkan horizontal scroll */
-                        overflow: 'hidden',
                       }}
                       whileHover={{ background: 'rgba(34,211,238,0.04)', x: 4, transition: { duration: 0.2 } }}
                     >
