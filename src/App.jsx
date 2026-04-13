@@ -379,8 +379,9 @@ const statChips = [
    ───────────────────────────────────────────────────────────── */
 const App = () => {
   const [activeNav, setActiveNav] = useState('beranda');
-  const [isNavHovered, setIsNavHovered] = useState(false);
+  const [isNavVisible, setIsNavVisible] = useState(false);
   const chartScrollRef = useRef(null);
+  const hideTimeout = useRef(null);
 
   /* ── Parallax background ── */
   const { scrollY } = useScroll();
@@ -409,14 +410,37 @@ const App = () => {
   return (
     <div style={{ background: '#0F172A', minHeight: '100vh', fontFamily: 'Outfit, sans-serif', color: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── VERTICAL SIDE NAV (Icon Only) ── */}
-      <nav
+      {/* ── HOVER ZONE TRIGGER (Tepi kanan layar) ── */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: '40px',
+          zIndex: 199,
+          background: 'transparent'
+        }}
+        onMouseEnter={() => {
+          if (hideTimeout.current) clearTimeout(hideTimeout.current);
+          setIsNavVisible(true);
+        }}
+      />
+
+      {/* ── VERTICAL SIDE NAV (Auto-Hide & Slide) ── */}
+      <motion.nav
         aria-label="Navigasi samping"
+        initial={{ opacity: 0, x: 50, y: '-50%' }}
+        animate={{
+          opacity: isNavVisible ? 1 : 0,
+          x: isNavVisible ? 0 : 50,
+          y: '-50%'
+        }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         style={{
           position: 'fixed',
           right: '1.5rem',
           top: '50%',
-          transform: 'translateY(-50%)',
           zIndex: 200,
           display: 'flex',
           flexDirection: 'column',
@@ -428,6 +452,15 @@ const App = () => {
           border: '0.5px solid rgba(255,255,255,0.15)',
           borderRadius: 99,
           boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+        }}
+        onMouseEnter={() => {
+          if (hideTimeout.current) clearTimeout(hideTimeout.current);
+          setIsNavVisible(true);
+        }}
+        onMouseLeave={() => {
+          hideTimeout.current = setTimeout(() => {
+            setIsNavVisible(false);
+          }, 200);
         }}
       >
         {navItems.map(n => {
@@ -475,7 +508,7 @@ const App = () => {
             </motion.button>
           );
         })}
-      </nav>
+      </motion.nav>
 
       {/* ── MAIN CONTENT — AnimatePresence mode='wait' ── */}
       <div style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column' }}>
