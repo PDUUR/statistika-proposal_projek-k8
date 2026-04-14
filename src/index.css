@@ -112,6 +112,11 @@ body {
   50%       { opacity: 0.6; }
 }
 
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* ── Utility classes ─── */
 .fade-up    { animation: fadeUp .6s ease forwards; }
 .fade-up-d1 { animation-delay: .1s; }

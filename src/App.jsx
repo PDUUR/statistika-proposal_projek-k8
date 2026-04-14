@@ -14,7 +14,7 @@ import {
   Area,
   LabelList,
 } from 'recharts';
-import { Users, BarChart3, Info, TrendingUp, BookOpen, Award, ChevronDown } from 'lucide-react';
+import { Users, BarChart3, Info, TrendingUp, BookOpen, Award, ChevronDown, Calendar, MapPin, Database } from 'lucide-react';
 import {
   motion,
   AnimatePresence,
@@ -349,30 +349,67 @@ const SectionHeader = ({ icon, title, right }) => (
 );
 
 /* ─────────────────────────────────────────────────────────────
-   STAT CHIP DATA — angka untuk AnimCounter
+   INFINITE MARQUEE STATS DATA & COMPONENTS
    ───────────────────────────────────────────────────────────── */
-const statChips = [
-  {
-    label: 'periode analisis',
-    staticValue: '2018 – 2025',
-    counter: null,
-  },
-  {
-    label: 'provinsi diamati',
-    staticValue: null,
-    counter: { target: 6, suffix: ' Provinsi', decimals: 0 },
-  },
-  {
-    label: 'total titik data',
-    staticValue: null,
-    counter: { target: 16, suffix: '× 7 seri', decimals: 0 },
-  },
-  {
-    label: 'puncak rata-rata',
-    staticValue: null,
-    counter: { target: peakAvg, suffix: '%', decimals: 2 },
-  },
+const marqueeData = [
+  { icon: Calendar, top: '2018–2025', bottom: 'periode analisis' },
+  { icon: MapPin, top: '6 Provinsi', bottom: 'provinsi diamati' },
+  { icon: Database, top: '112 Data', bottom: 'total titik data' },
+  { icon: TrendingUp, top: '8,16%', bottom: 'puncak rata-rata' },
 ];
+
+const MarqueeGroup = () => (
+  <div style={{ display: 'flex' }}>
+    {marqueeData.map((item, i) => {
+      const Icon = item.icon;
+      return (
+        <div key={i} style={{ paddingRight: '1.25rem' }}>
+          <div 
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              background: '#0F172A',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '20px',
+              padding: '1.5rem',
+              minWidth: '220px',
+            }}
+          >
+            <Icon color="#FFFFFF" size={26} style={{ marginBottom: '12px' }} />
+            <span style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '4px', textAlign: 'center' }}>{item.top}</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontWeight: 300, fontSize: '0.85rem', textAlign: 'center' }}>{item.bottom}</span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);
+
+const MarqueeStats = () => {
+  return (
+    <div 
+      style={{
+        width: '100%',
+        maxWidth: 1000,
+        margin: '0 auto',
+        overflow: 'hidden',
+        position: 'relative',
+        maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)'
+      }}
+    >
+      <div 
+        style={{
+          display: 'flex',
+          width: 'max-content',
+          animation: 'marquee 20s linear infinite'
+        }}
+      >
+        <MarqueeGroup />
+        <MarqueeGroup />
+      </div>
+    </div>
+  );
+};
 
 /* ─────────────────────────────────────────────────────────────
    MAIN APP
@@ -649,29 +686,9 @@ const App = () => {
                   </div>
                 </div>
 
-                {/* ── STAT CHIPS — Random Entrance Stagger (4 arah berbeda)
-                       Setiap kotak masuk dari arah yang berbeda, dengan AnimCounter ── */}
-                <motion.div
-                  variants={chipStagger}
-                  style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}
-                >
-                  {statChips.map((chip, i) => (
-                    <motion.div
-                      key={i}
-                      className="stat-chip"
-                      variants={chipEntrances[i]}  /* setiap chip punya arah masuk unik */
-                      whileHover={{ scale: 1.05, transition: SPRING_FAST }}
-                      whileTap={{ scale: 0.95, transition: SPRING_FAST }}
-                    >
-                      <div className="stat-chip__value">
-                        {chip.counter
-                          ? <AnimCounter target={chip.counter.target} suffix={chip.counter.suffix} decimals={chip.counter.decimals} />
-                          : chip.staticValue
-                        }
-                      </div>
-                      <div className="stat-chip__label">{chip.label}</div>
-                    </motion.div>
-                  ))}
+                {/* ── STAT CHIPS — INFINITE MARQUEE ── */}
+                <motion.div variants={slideUpChild} style={{ marginTop: '1.5rem' }}>
+                  <MarqueeStats />
                 </motion.div>
 
                 {/* ── CTA Button ── */}
